@@ -1,0 +1,10 @@
+# HTML, JS, TS aur BUNDLE files ko counting se bahar karne ke liye
+*.html linguist-vendored
+*.js linguist-vendored
+*.ts linguist-vendored
+*.json linguist-vendored
+*.css linguist-vendored
+bun.lock linguist-vendored
+
+# Rust code ko primary language set karne ke liye
+*.rs linguist-detectable=true
