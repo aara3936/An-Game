@@ -1,7 +1,8 @@
-# HTML, JS, TS aur BUNDLE files ko counting se bahar karne ke liye
+# Front-end tooling & wrapper code ko count se bahar karne ke liye
 *.html linguist-vendored
 *.js linguist-vendored
 *.ts linguist-vendored
+*.tsx linguist-vendored
 *.json linguist-vendored
 *.css linguist-vendored
 bun.lock linguist-vendored
