@@ -1,0 +1,6 @@
+{
+  "name": "3D Strategic Defense & Missile Command",
+  "description": "Ultra-realistic 3D Strategic Defense & Global Warfare simulator inspired by superpower conflicts. Features 360-degree mobile touch orbit controls, Diplomatic Crisis & Peace Broker Engine (DEFCON 1-5), 80+ skyscraper metropolis, Phased-Array radar, Laser Point-Defense CIWS, 80+ physics debris structural crumble, persistent impact craters, and satellite war-room intelligence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,57 @@
+[package]
+name = "warfare_simulator_engine"
+version = "0.1.0"
+edition = "2021"
+authors = ["Senior Systems Architect & Rust Game Engine Engineer <engine@strategic-command.internal>"]
+description = "Production-Grade High-Fidelity 3D Warfare Simulator & AI Engine with Adaptive Hardware Profiling, 7-State Tactical AI Brain, WGSL Shaders, Procedural Web Audio, and Multi-Pin Target Lock Bridge"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# High-speed SIMD vector and matrix math
+glam = { version = "0.28", features = ["serde"] }
+
+# Random number generation with WebAssembly JS support
+rand = "0.8.5"
+getrandom = { version = "0.2", features = ["js"] }
+
+# Serialization and telemetry export for HUD bridge
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# WebAssembly bindings and JS integration
+wasm-bindgen = "0.2.92"
+js-sys = "0.3.69"
+
+# Web-sys DOM, WebGL2, AudioContext, and Canvas bindings
+[dependencies.web-sys]
+version = "0.3.69"
+features = [
+  "AudioContext",
+  "AudioDestinationNode",
+  "AudioNode",
+  "BiquadFilterNode",
+  "BiquadFilterType",
+  "CanvasRenderingContext2d",
+  "Document",
+  "Element",
+  "GainNode",
+  "HtmlCanvasElement",
+  "OscillatorNode",
+  "OscillatorType",
+  "Performance",
+  "WebGl2RenderingContext",
+  "WebGlProgram",
+  "WebGlShader",
+  "WebGlBuffer",
+  "Window",
+  "console",
+]
+
+[profile.release]
+opt-level = "s"       # Optimize for binary throughput and minimal Wasm size
+lto = true            # Link-Time Optimization across all crates
+codegen-units = 1     # Maximize compiler optimization passes
+panic = "abort"       # Strip stack unwinding overhead for WebAssembly
+strip = "symbols"     # Strip debug symbols for production Wasm artifact

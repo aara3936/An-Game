@@ -1,0 +1,2915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>3D Strategic Warfare & Master V7 Doomsday Simulator</title>
+  <meta name="description" content="Next-generation, high-fidelity 3D Strategic Missile Warfare & Doomsday Simulator with daylight lighting, dynamic skydome, 100+ skyscraper metropolis, precision targeting reticle, submarine surgical strikes, and automated Master V7 Doomsday protocol." />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0c1a2e;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: #fff;
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+    .hud-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 8px;
+      z-index: 10;
+    }
+    .hud-panel {
+      background: rgba(10, 20, 38, 0.9);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 10px;
+      padding: 7px 11px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 0 12px rgba(0, 240, 255, 0.1);
+      pointer-events: auto;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+      width: 100%;
+    }
+    .btn {
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      pointer-events: auto;
+      text-transform: uppercase;
+      font-family: monospace;
+      transition: all 0.15s ease;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #00f0ff, #0284c7);
+      color: #040812;
+      border: none;
+      font-weight: 800;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #f43f5e, #be123c);
+      color: #fff;
+      border: none;
+      font-weight: 800;
+      box-shadow: 0 0 12px rgba(244, 63, 94, 0.5);
+    }
+    .btn-warning {
+      background: linear-gradient(135deg, #f59e0b, #b45309);
+      color: #fff;
+      border: none;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, #a855f7, #6d28d9);
+      color: #fff;
+      border: none;
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+    }
+    .btn-active {
+      background: #00f0ff;
+      color: #040812;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.7);
+    }
+    .bottom-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      width: 100%;
+      pointer-events: auto;
+    }
+    .doomsday-banner {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(190, 18, 60, 0.95);
+      border: 2px solid #ff0055;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 11px;
+      font-family: monospace;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1.5px;
+      box-shadow: 0 0 35px rgba(255, 0, 85, 0.8);
+      z-index: 35;
+      display: none;
+      pointer-events: none;
+      text-transform: uppercase;
+      white-space: nowrap;
+      animation: alertPulse 0.5s infinite alternate;
+    }
+    @keyframes alertPulse {
+      from { transform: translateX(-50%) scale(0.98); opacity: 0.9; }
+      to { transform: translateX(-50%) scale(1.02); opacity: 1.0; }
+    }
+    .status-toast {
+      position: absolute;
+      top: 105px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 20, 38, 0.92);
+      border: 1px solid #00f0ff;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 9px;
+      font-family: monospace;
+      color: #00f0ff;
+      display: none;
+      pointer-events: none;
+      z-index: 25;
+      white-space: nowrap;
+    }
+    .reticle-hud {
+      position: absolute;
+      bottom: 80px;
+      left: 10px;
+      background: rgba(6, 14, 28, 0.92);
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 9px;
+      font-family: monospace;
+      color: #cbd5e1;
+      pointer-events: auto;
+      z-index: 15;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      min-width: 210px;
+    }
+    .drawer {
+      position: absolute;
+      right: 8px;
+      bottom: 80px;
+      width: 320px;
+      max-width: 92vw;
+      background: rgba(8, 16, 32, 0.98);
+      border: 1px solid #00f0ff;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.85);
+      z-index: 30;
+      pointer-events: auto;
+      display: none;
+      backdrop-filter: blur(12px);
+    }
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .health-bar-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      margin-top: 4px;
+    }
+    .health-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #00f0ff, #10b981);
+      transition: width 0.25s ease;
+    }
+    .quick-cams {
+      display: flex;
+      gap: 3px;
+      margin-top: 5px;
+    }
+    .quick-cams button {
+      padding: 3px 6px;
+      font-size: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="doomsday-banner" class="doomsday-banner">WARNING: MASSIVE THREAT DETECTED - AUTOMATIC DOOMSDAY PROTOCOL ACTIVATED</div>
+  <div id="status-toast" class="status-toast">SYSTEM MESSAGE</div>
+
+  <!-- TARGET TELEMETRY HUD -->
+  <div id="reticle-hud" class="reticle-hud">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f59e0b; padding-bottom:3px; margin-bottom:4px;">
+      <span style="color:#f59e0b; font-weight:bold;">🎯 PINPOINT TARGET RETICLE</span>
+      <span id="reticle-state" style="color:#10b981;">COORDS LOCKED</span>
+    </div>
+    <div>GRID COORDS: <span id="reticle-coords" style="color:#00f0ff;">X: 0.0, Z: 0.0</span></div>
+    <div>RANGE FROM SILO: <span id="reticle-range" style="color:#f59e0b;">0 km</span> | EST. TTI: <span id="reticle-tti" style="color:#00f0ff;">0s</span></div>
+    <div style="display:flex; gap:4px; margin-top:6px;">
+      <button id="sub-strike-btn" class="btn btn-warning" style="flex:1; padding:5px 2px; font-size:8px;">🌊 SUB SLBM</button>
+      <button id="drone-strike-btn" class="btn btn-purple" style="flex:1; padding:5px 2px; font-size:8px;">🛸 RECON DRONE</button>
+      <button id="silo-strike-btn" class="btn btn-danger" style="flex:1; padding:5px 2px; font-size:8px;">🚀 SILO ICBM</button>
+    </div>
+  </div>
+
+  <!-- INTEL DRAWER (25-SYSTEM ENEMY SUPERPOWER ARSENAL) -->
+  <div id="intel-drawer" class="drawer" style="max-height: 84vh; overflow-y: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(0, 240, 255, 0.3); padding-bottom: 5px; margin-bottom: 6px;">
+      <div>
+        <span id="intel-badge" style="font-size: 8px; background: rgba(244,63,94,0.3); border: 1px solid rgba(244,63,94,0.6); color: #fda4af; padding: 1px 4px; border-radius: 3px; font-weight: bold; font-family: monospace;">SUPERPOWER BASTION</span>
+        <div id="intel-name" style="font-size: 11px; font-weight: bold; color: #fff; margin-top: 2px;">TARGET SITE</div>
+      </div>
+      <button id="close-intel-btn" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer;">✕</button>
+    </div>
+
+    <!-- 5-Tier Filter Tabs -->
+    <div style="display: flex; gap: 2px; overflow-x: auto; margin-bottom: 6px; padding-bottom: 2px;">
+      <button class="tier-tab-btn btn btn-active" data-tier="ALL" style="font-size: 7px; padding: 2px 5px;">ALL (25)</button>
+      <button class="tier-tab-btn btn" data-tier="DEFENSE" style="font-size: 7px; padding: 2px 5px;">DEF (5)</button>
+      <button class="tier-tab-btn btn" data-tier="OFFENSE" style="font-size: 7px; padding: 2px 5px;">OFF (5)</button>
+      <button class="tier-tab-btn btn" data-tier="CYBER" style="font-size: 7px; padding: 2px 5px;">EW (5)</button>
+      <button class="tier-tab-btn btn" data-tier="FLEET" style="font-size: 7px; padding: 2px 5px;">NAV/AIR (5)</button>
+      <button class="tier-tab-btn btn" data-tier="LOGISTICS" style="font-size: 7px; padding: 2px 5px;">CMD (5)</button>
+    </div>
+
+    <!-- 25-System Quick Selector -->
+    <select id="intel-system-select" style="width: 100%; background: #071224; border: 1px solid rgba(0, 240, 255, 0.4); color: #00f0ff; font-family: monospace; font-size: 8.5px; padding: 4px; border-radius: 4px; margin-bottom: 6px;">
+    </select>
+
+    <div style="background: rgba(0,0,0,0.5); padding: 5px 7px; border-radius: 5px; border: 1px solid #334155; margin-bottom: 6px; font-family: monospace; font-size: 8.5px;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: #94a3b8;">INTERCEPTION PROBABILITY:</span>
+        <span id="intel-prob" style="color: #f43f5e; font-weight: bold;">88% [ACTIVE]</span>
+      </div>
+      <div style="width: 100%; height: 4px; background: #040812; border-radius: 2px; overflow: hidden; margin-top: 3px;">
+        <div id="intel-prob-bar" style="width: 88%; height: 100%; background: #f43f5e;"></div>
+      </div>
+    </div>
+
+    <div style="font-size: 8.5px; font-family: monospace; color: #94a3b8; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px;">
+      <div>THREAT: <span id="intel-threat" style="color: #f43f5e; font-weight: bold;">CRITICAL</span></div>
+      <div>COORDINATES: <span id="intel-coords" style="color: #00f0ff;">--</span></div>
+      <div>RADAR UMBRELLA: <span id="intel-radar" style="color: #f59e0b;">640km</span></div>
+      <div>INTEGRITY: <span id="intel-health" style="color: #10b981;">100%</span></div>
+    </div>
+    <div id="intel-briefing" style="font-size: 8px; color: #cbd5e1; background: rgba(0,0,0,0.35); padding: 6px; border-radius: 4px; border-left: 2px solid #00f0ff; font-family: monospace;">
+      Superpower strategic facility intelligence.
+    </div>
+    <div style="display: flex; gap: 4px; margin-top: 8px;">
+      <button id="intel-sub-btn" class="btn btn-warning" style="flex: 1; padding: 6px 3px; font-size: 8px;">🌊 SUB SURGICAL</button>
+      <button id="intel-drone-btn" class="btn btn-purple" style="flex: 1; padding: 6px 3px; font-size: 8px;">🛸 DRONE PINPOINT</button>
+      <button id="intel-icbm-btn" class="btn btn-danger" style="flex: 1; padding: 6px 3px; font-size: 8px;">🚀 ICBM SALVO</button>
+    </div>
+  </div>
+
+  <!-- 12-LAYER INTEGRATED AIR DEFENSE GRID DRAWER -->
+  <div id="defense-drawer" class="drawer" style="left: 8px; right: auto; width: 300px; max-height: 84vh; overflow-y: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 240, 255, 0.3); padding-bottom: 4px; margin-bottom: 5px;">
+      <div style="font-size: 10px; font-family: monospace; font-weight: bold; color: #00f0ff;">🛡️ 12-LAYER DEFENSE ARCHITECTURE</div>
+      <button id="close-defense-btn" style="background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer;">✕</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 3px; font-size: 8px; font-family: monospace;">
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #10b981; display:flex; justify-content:space-between;"><span>1. MULTI S-25 ROTATING RADAR</span><span id="layer-s25-status" style="color:#10b981;">360° ACTIVE</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #00f0ff; display:flex; justify-content:space-between;"><span>2. THRILLER S-20 INTERCEPTORS</span><span id="layer-sam-status" style="color:#00f0ff;">READY (32/36)</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #00f0ff; display:flex; justify-content:space-between;"><span>3. THRILLER V-70 TRAJECTORY HUB</span><span id="layer-tti-status" style="color:#00f0ff;">TTI COMPLIANT</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #f59e0b; display:flex; justify-content:space-between;"><span>4. THRILLER S-90 ALARM V-2</span><span id="layer-s90-status" style="color:#f59e0b;">2/2 ARMED</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #00f0ff; display:flex; justify-content:space-between;"><span>5. MULTI-CLOUD THREAT ARCHIVE</span><span id="layer-archive-status" style="color:#00f0ff;">TELEMETRY SYNC</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #a855f7; display:flex; justify-content:space-between;"><span>6. PREDICTIVE BEAM CIWS</span><span id="layer-beam-status" style="color:#a855f7;">4/4 OPERATIONAL</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #00f0ff; display:flex; justify-content:space-between;"><span>7. F-90 STRATO-SAM PERIMETER RING</span><span id="layer-ring-status" style="color:#00f0ff;">10/10 BASES ACTIVE</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #38bdf8; display:flex; justify-content:space-between;"><span>8. HIJACKING SPEAR CYBER EW</span><span id="layer-spear-status" style="color:#38bdf8;">STANDBY</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #f43f5e; display:flex; justify-content:space-between;"><span>9. MASTER V7 DOOMSDAY HUB</span><span id="layer-doomsday-status" style="color:#f43f5e;">DEAD-HAND ENGAGED</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #06b6d4; display:flex; justify-content:space-between;"><span>10. COASTAL HYDROGEN SUBMARINES</span><span id="layer-sub-status" style="color:#06b6d4;">2/2 ON PATROL</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #10b981; display:flex; justify-content:space-between;"><span>11. RECON & SURGICAL DRONE FLEET</span><span id="layer-drone-status" style="color:#10b981;">AIRBORNE</span></div>
+      <div class="hud-panel" style="padding: 3px 6px; border-left: 2px solid #f59e0b; display:flex; justify-content:space-between;"><span>12. UNDERGROUND SILOS & CIVIL HAVEN</span><span id="layer-silo-status" style="color:#f59e0b;">4/4 READY</span></div>
+    </div>
+  </div>
+
+  <!-- MAIN HUD -->
+  <div class="hud-layer">
+    <!-- Top Row -->
+    <div class="top-bar">
+      <!-- Left: City Integrity & Defense Systems -->
+      <div class="hud-panel" style="min-width: 145px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 8px; color: #94a3b8; font-weight: bold;">METROPOLIS INTEGRITY</span>
+          <span id="city-health-pct" style="color: #00f0ff; font-weight: bold; font-family: monospace; font-size: 10px;">100%</span>
+        </div>
+        <div class="health-bar-container">
+          <div id="city-health-bar" class="health-bar"></div>
+        </div>
+        <div style="margin-top: 4px; display: flex; align-items: center; justify-content: space-between; font-size: 8px; font-family: monospace;">
+          <button id="open-defense-btn" class="btn" style="padding: 2px 4px; font-size: 7.5px;">🛡️ 12-LAYER GRID</button>
+          <span id="s25-radar-status" style="color: #00f0ff;">RADAR: 360° ACTIVE</span>
+        </div>
+        <div class="quick-cams">
+          <button id="cam-hq" class="btn">HQ</button>
+          <button id="cam-metropolis" class="btn">CITY</button>
+          <button id="cam-silos" class="btn">SILOS</button>
+          <button id="cam-airbase" class="btn">AIRBASE</button>
+          <button id="cam-subs" class="btn">SUBS</button>
+          <button id="cam-enemy" class="btn">ENEMY</button>
+          <button id="cam-street" class="btn">STREET</button>
+          <button id="cam-reset" class="btn">TOP</button>
+        </div>
+      </div>
+
+      <!-- Center: DEFCON & Wave Threat -->
+      <div class="hud-panel" style="text-align: center; min-width: 160px;">
+        <div id="defcon-badge" style="font-size: 10px; font-weight: 800; color: #f59e0b; letter-spacing: 1px; font-family: monospace;">DEFCON 3: STANDBY AIR DEFENSE</div>
+        <div id="wave-title" style="font-size: 8px; color: #00f0ff; font-family: monospace; margin-top: 1px;">WAVE 1/5: SUPERPOWER RECON</div>
+        <div style="margin-top: 3px; font-size: 8px; color: #cbd5e1; font-family: monospace;">
+          MASSIVE STRIKE COUNTDOWN: <span id="wave-timer-text" style="font-weight: bold; color: #f43f5e;">25s</span>
+        </div>
+        <div id="threat-counter" style="font-size: 8px; color: #f43f5e; font-family: monospace; font-weight: bold; margin-top: 2px;">
+          INBOUND HOSTILE VECTORS: 0
+        </div>
+      </div>
+
+      <!-- Right: Stocks, Overheat & Download -->
+      <div class="hud-panel" style="text-align: right; min-width: 145px;">
+        <div style="display: flex; justify-content: space-between; font-size: 8px; font-family: monospace;">
+          <span style="color: #94a3b8;">S-20/F-90 SAMs:</span>
+          <span id="sam-stock-text" style="font-weight: bold; color: #00f0ff;">32/36</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 8px; font-family: monospace; margin-top: 2px;">
+          <span style="color: #94a3b8;">BEAM GUN HEAT:</span>
+          <span id="beam-heat-text" style="font-weight: bold; color: #a855f7;">0% [READY]</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 8px; font-family: monospace; margin-top: 2px;">
+          <span style="color: #94a3b8;">SUBMARINE SLBMs:</span>
+          <span id="sub-stock-text" style="font-weight: bold; color: #f59e0b;">6/6 READY</span>
+        </div>
+        <div style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 8px; color: #cbd5e1; font-family: monospace;">SCORE: <b id="score-text" style="color: #10b981;">0</b></span>
+          <button id="download-html-btn" class="btn" style="padding: 2px 6px; font-size: 8px; border-color: #00f0ff; color: #00f0ff;">💾 DOWNLOAD HTML</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="bottom-bar">
+      <div class="hud-panel" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; align-items: center;">
+        <button id="open-intel-btn" class="btn btn-primary">🗺️ ENEMY ARSENAL (25)</button>
+        <button id="mass-attack-btn" class="btn btn-danger">⚡ TRIGGER ENEMY MASS WAVE</button>
+        <button id="doomsday-manual-btn" class="btn btn-warning">☢️ MASTER V7 DOOMSDAY</button>
+        <button id="spear-btn" class="btn btn-purple">🗡️ HIJACK SPEAR SHIELD</button>
+        <button id="jamming-btn" class="btn">⚡ EW RADAR JAMMING</button>
+        <button id="auto-defense-btn" class="btn btn-active">🛡️ AUTO-DEFENSE: ON</button>
+        <button id="audio-toggle-btn" class="btn">🔊</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER / VICTORY MODAL -->
+  <div id="end-modal" class="modal-overlay" style="display: none;">
+    <div class="hud-panel" style="max-width: 340px; width: 100%; text-align: center; border-color: #f43f5e; padding: 18px 14px;">
+      <div id="modal-title" style="font-size: 16px; font-weight: 800; color: #f43f5e; margin-bottom: 4px;">METROPOLIS DESTROYED</div>
+      <div id="modal-desc" style="font-size: 10px; color: #cbd5e1; line-height: 1.5; margin-bottom: 12px;">
+        Superpower hypersonic saturation overwhelmed the defense grid.
+      </div>
+      <div style="background: rgba(0,0,0,0.5); padding: 8px; border-radius: 6px; margin-bottom: 12px; font-family: monospace; font-size: 10px;">
+        FINAL SCORE: <span id="modal-final-score" style="color: #f59e0b; font-weight: bold;">0</span><br>
+        WARHEADS INTERCEPTED: <span id="modal-final-intercepts" style="color: #00f0ff; font-weight: bold;">0</span>
+      </div>
+      <button id="modal-restart-btn" class="btn btn-primary" style="width: 100%; padding: 8px;">RESTART WARFARE SIMULATION</button>
+    </div>
+  </div>
+
+  <script>
+    // --- PROCEDURAL WEB AUDIO SYNTHESIZER ---
+    let audioCtx = null;
+    let isMuted = false;
+
+    function initAudio() {
+      if (audioCtx || isMuted) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioCtx = new AudioCtx();
+      } catch (e) {}
+    }
+
+    function playTone(freq, duration, type, rampTo) {
+      if (!audioCtx || isMuted) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      if (rampTo) osc.frequency.exponentialRampToValueAtTime(rampTo, now + duration);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    }
+
+    function playExplosion(isHeavy) {
+      if (!audioCtx || isMuted) return;
+      const now = audioCtx.currentTime;
+      const dur = isHeavy ? 1.6 : 0.6;
+      const bufSize = Math.floor(audioCtx.sampleRate * dur);
+      const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * (isHeavy ? 0.35 : 0.12)));
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(isHeavy ? 500 : 1000, now);
+      filter.frequency.exponentialRampToValueAtTime(30, now + dur);
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(isHeavy ? 0.95 : 0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      noise.start(now);
+    }
+
+    function playLaserBeam() {
+      if (!audioCtx || isMuted) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(1600, now);
+      osc.frequency.exponentialRampToValueAtTime(240, now + 0.3);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    }
+
+    function playSiren() {
+      if (!audioCtx || isMuted) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(450, now);
+      osc.frequency.linearRampToValueAtTime(900, now + 0.5);
+      osc.frequency.linearRampToValueAtTime(450, now + 1.0);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 1.2);
+    }
+
+    // --- THREE.JS SCENE, SKYDOME & DAYLIGHT ENGINE ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xa7c5eb, 0.0012);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 4000);
+    camera.position.set(0, 160, 240);
+    camera.lookAt(0, 20, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // DAYLIGHT DYNAMIC SKYDOME
+    const skyGeo = new THREE.SphereGeometry(1800, 32, 24);
+    const skyCanvas = document.createElement('canvas');
+    skyCanvas.width = 16;
+    skyCanvas.height = 256;
+    const skyCtx = skyCanvas.getContext('2d');
+    const skyGrad = skyCtx.createLinearGradient(0, 0, 0, 256);
+    skyGrad.addColorStop(0, '#1565c0');   // Deep vibrant blue at zenith
+    skyGrad.addColorStop(0.5, '#64b5f6'); // Azure daylight
+    skyGrad.addColorStop(0.85, '#bbdefb');// Light atmospheric haze
+    skyGrad.addColorStop(1, '#e3f2fd');   // Horizon glow
+    skyCtx.fillStyle = skyGrad;
+    skyCtx.fillRect(0, 0, 16, 256);
+    const skyTex = new THREE.CanvasTexture(skyCanvas);
+    const skyMat = new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide });
+    const skyDome = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(skyDome);
+
+    // VOLUMETRIC PROCEDURAL DRIFTING CLOUDS
+    const cloudsGroup = new THREE.Group();
+    const cloudMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.9,
+      transparent: true,
+      opacity: 0.85,
+      flatShading: true
+    });
+    for (let c = 0; c < 30; c++) {
+      const cloud = new THREE.Group();
+      const puffCount = 5 + Math.floor(Math.random() * 5);
+      for (let p = 0; p < puffCount; p++) {
+        const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(18 + Math.random() * 14, 1), cloudMat);
+        puff.position.set((Math.random() - 0.5) * 45, (Math.random() - 0.5) * 12, (Math.random() - 0.5) * 45);
+        puff.castShadow = true;
+        cloud.add(puff);
+      }
+      cloud.position.set(
+        (Math.random() - 0.5) * 1200,
+        260 + Math.random() * 80,
+        (Math.random() - 0.5) * 1200
+      );
+      cloudsGroup.add(cloud);
+    }
+    scene.add(cloudsGroup);
+
+    // DAYLIGHT ILLUMINATION & SHADOWS
+    const hemiLight = new THREE.HemisphereLight(0xbad7f2, 0x4a6b53, 0.95);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfff5e6, 1.8);
+    sunLight.position.set(-250, 380, -220);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 50;
+    sunLight.shadow.camera.far = 1200;
+    const dSize = 350;
+    sunLight.shadow.camera.left = -dSize;
+    sunLight.shadow.camera.right = dSize;
+    sunLight.shadow.camera.top = dSize;
+    sunLight.shadow.camera.bottom = -dSize;
+    scene.add(sunLight);
+
+    // TERRAIN, CITY ASPHALT ROADS & OCEAN
+    const groundGeo = new THREE.PlaneGeometry(600, 600);
+    groundGeo.rotateX(-Math.PI / 2);
+    const groundMesh = new THREE.Mesh(
+      groundGeo,
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85, metalness: 0.1 })
+    );
+    groundMesh.receiveShadow = true;
+    scene.add(groundMesh);
+
+    // Coastal Ocean & Harbor
+    const oceanGeo = new THREE.PlaneGeometry(2800, 2800);
+    oceanGeo.rotateX(-Math.PI / 2);
+    const oceanMesh = new THREE.Mesh(
+      oceanGeo,
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.15, metalness: 0.65, transparent: true, opacity: 0.92 })
+    );
+    oceanMesh.position.y = -1.2;
+    oceanMesh.receiveShadow = true;
+    scene.add(oceanMesh);
+
+    // NATURE PARKS, BUSHES & STREET BENCHES
+    const parkMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.85 });
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.9 });
+    const foliageMat = new THREE.MeshStandardMaterial({ color: 0x388e3c, roughness: 0.75 });
+    const bushMat = new THREE.MeshStandardMaterial({ color: 0x43a047, roughness: 0.8 });
+    const benchWoodMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.8 });
+    const benchIronMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 });
+
+    const parkZones = [
+      { x: -55, z: -55, w: 42, h: 42 },
+      { x: 55, z: 55, w: 45, h: 35 },
+      { x: -60, z: 60, w: 35, h: 45 }
+    ];
+
+    parkZones.forEach(p => {
+      const park = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.h).rotateX(-Math.PI / 2), parkMat);
+      park.position.set(p.x, 0.05, p.z);
+      park.receiveShadow = true;
+      scene.add(park);
+
+      // Trees in park
+      for (let t = 0; t < 12; t++) {
+        const tx = p.x + (Math.random() - 0.5) * (p.w - 8);
+        const tz = p.z + (Math.random() - 0.5) * (p.h - 8);
+        const treeGroup = new THREE.Group();
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 3.2, 6), trunkMat);
+        trunk.position.y = 1.6;
+        trunk.castShadow = true;
+        treeGroup.add(trunk);
+
+        const foliage = new THREE.Mesh(new THREE.ConeGeometry(2.4, 5.0, 7), foliageMat);
+        foliage.position.y = 4.8;
+        foliage.castShadow = true;
+        treeGroup.add(foliage);
+
+        treeGroup.position.set(tx, 0, tz);
+        scene.add(treeGroup);
+      }
+
+      // Foliage bushes
+      for (let b = 0; b < 10; b++) {
+        const bx = p.x + (Math.random() - 0.5) * (p.w - 6);
+        const bz = p.z + (Math.random() - 0.5) * (p.h - 6);
+        const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.9 + Math.random() * 0.7, 1), bushMat);
+        bush.position.set(bx, 0.6, bz);
+        bush.castShadow = true;
+        scene.add(bush);
+      }
+
+      // Public park benches
+      for (let bn = 0; bn < 3; bn++) {
+        const benchGroup = new THREE.Group();
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.15, 0.8), benchWoodMat);
+        seat.position.y = 0.5;
+        seat.castShadow = true;
+        benchGroup.add(seat);
+
+        const back = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.7, 0.12), benchWoodMat);
+        back.position.set(0, 0.85, -0.34);
+        benchGroup.add(back);
+
+        const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 6), benchIronMat);
+        legL.position.set(-1.1, 0.25, 0);
+        benchGroup.add(legL);
+
+        const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 6), benchIronMat);
+        legR.position.set(1.1, 0.25, 0);
+        benchGroup.add(legR);
+
+        benchGroup.position.set(p.x + (bn - 1) * 10, 0, p.z + (bn % 2 === 0 ? 8 : -8));
+        scene.add(benchGroup);
+      }
+    });
+
+    // DETAILED ASPHALT ROADS NETWORK & CROSSWALKS
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9, metalness: 0.1 });
+    const roadLineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const crosswalkMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+    const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+
+    // Major Avenues along grid lines
+    const roadCoords = [-150, -110, -70, -30, 30, 70, 110, 150];
+    roadCoords.forEach(c => {
+      // East-West Road
+      const ewRoad = new THREE.Mesh(new THREE.PlaneGeometry(360, 6.5).rotateX(-Math.PI / 2), roadMat);
+      ewRoad.position.set(0, 0.02, c);
+      ewRoad.receiveShadow = true;
+      scene.add(ewRoad);
+
+      // North-South Road
+      const nsRoad = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 360).rotateX(-Math.PI / 2), roadMat);
+      nsRoad.position.set(c, 0.02, 0);
+      nsRoad.receiveShadow = true;
+      scene.add(nsRoad);
+
+      // Sidewalk borders
+      const ewWalkN = new THREE.Mesh(new THREE.PlaneGeometry(360, 1.2).rotateX(-Math.PI / 2), sidewalkMat);
+      ewWalkN.position.set(0, 0.03, c + 3.8);
+      scene.add(ewWalkN);
+      const ewWalkS = new THREE.Mesh(new THREE.PlaneGeometry(360, 1.2).rotateX(-Math.PI / 2), sidewalkMat);
+      ewWalkS.position.set(0, 0.03, c - 3.8);
+      scene.add(ewWalkS);
+
+      // Dashed lane stripes
+      for (let s = -170; s < 170; s += 8) {
+        if (Math.abs(s) < 22 && Math.abs(c) < 22) continue;
+        const dashEW = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.25).rotateX(-Math.PI / 2), roadLineMat);
+        dashEW.position.set(s, 0.04, c);
+        scene.add(dashEW);
+
+        const dashNS = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 3.5).rotateX(-Math.PI / 2), roadLineMat);
+        dashNS.position.set(c, 0.04, s);
+        scene.add(dashNS);
+      }
+
+      // Crosswalks at intersections
+      roadCoords.forEach(c2 => {
+        for (let k = -2.5; k <= 2.5; k += 0.8) {
+          const cw1 = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 2.2).rotateX(-Math.PI / 2), crosswalkMat);
+          cw1.position.set(c + k, 0.04, c2 - 4.5);
+          scene.add(cw1);
+
+          const cw2 = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.4).rotateX(-Math.PI / 2), crosswalkMat);
+          cw2.position.set(c - 4.5, 0.04, c2 + k);
+          scene.add(cw2);
+        }
+      });
+    });
+
+    // PROCEDURAL SKYSCRAPERS CITYSCAPE (100+ HIGH-RISE TOWERS)
+    function createSkyscraperTexture(baseHex, winHex) {
+      const cv = document.createElement('canvas');
+      cv.width = 128; cv.height = 256;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = baseHex;
+      ctx.fillRect(0, 0, 128, 256);
+      ctx.fillStyle = '#0f172a';
+      for (let x = 0; x < 128; x += 16) ctx.fillRect(x, 0, 2, 256);
+      for (let y = 0; y < 256; y += 16) ctx.fillRect(0, y, 128, 2);
+      ctx.fillStyle = winHex;
+      for (let y = 2; y < 256; y += 16) {
+        for (let x = 2; x < 128; x += 16) {
+          if (Math.random() > 0.3) {
+            ctx.globalAlpha = 0.6 + Math.random() * 0.4;
+            ctx.fillRect(x + 1, y + 1, 13, 13);
+          }
+        }
+      }
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    const blueGlassMat = new THREE.MeshStandardMaterial({ map: createSkyscraperTexture('#0f2b48', '#38bdf8'), roughness: 0.2, metalness: 0.85 });
+    const goldGlassMat = new THREE.MeshStandardMaterial({ map: createSkyscraperTexture('#2c1f0b', '#fbbf24'), roughness: 0.2, metalness: 0.85 });
+    const silverGlassMat = new THREE.MeshStandardMaterial({ map: createSkyscraperTexture('#1e293b', '#e2e8f0'), roughness: 0.2, metalness: 0.85 });
+
+    const buildingBox = new THREE.BoxGeometry(1, 1, 1);
+    const dummyObj = new THREE.Object3D();
+    const cityBuildings = [];
+
+    // Generate 120+ Skyscrapers across metropolitan grid
+    const bDefList = [];
+    for (let x = -170; x <= 170; x += 22) {
+      for (let z = -170; z <= 170; z += 22) {
+        if (Math.abs(x) < 32 && Math.abs(z) < 32) continue; // HQ Plaza
+        // Skip some spots for parks
+        if ((x > -75 && x < -35 && z > -75 && z < -35) || (x > 35 && x < 75 && z > 35 && z < 75)) continue;
+
+        const h = 28 + Math.random() * 95;
+        const w = 11 + Math.random() * 7;
+        const b = {
+          x: x + (Math.random() - 0.5) * 4,
+          y: h / 2,
+          z: z + (Math.random() - 0.5) * 4,
+          sx: w, sy: h, sz: w,
+          health: 100,
+          destroyed: false,
+          matType: Math.floor(Math.random() * 3)
+        };
+        bDefList.push(b);
+      }
+    }
+
+    const bGroups = [[], [], []];
+    bDefList.forEach(b => bGroups[b.matType].push(b));
+    const mats = [blueGlassMat, goldGlassMat, silverGlassMat];
+
+    bGroups.forEach((list, idx) => {
+      if (list.length === 0) return;
+      const instMesh = new THREE.InstancedMesh(buildingBox, mats[idx], list.length);
+      instMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(list.length * 3), 3);
+      for (let i = 0; i < list.length; i++) {
+        instMesh.setColorAt(i, new THREE.Color(1, 1, 1));
+      }
+      instMesh.instanceColor.needsUpdate = true;
+      instMesh.castShadow = true;
+      instMesh.receiveShadow = true;
+      list.forEach((b, i) => {
+        dummyObj.position.set(b.x, b.y, b.z);
+        dummyObj.scale.set(b.sx, b.sy, b.sz);
+        dummyObj.updateMatrix();
+        instMesh.setMatrixAt(i, dummyObj.matrix);
+        b.instMesh = instMesh;
+        b.instIdx = i;
+        b.rooftops = [];
+        cityBuildings.push(b);
+      });
+      instMesh.instanceMatrix.needsUpdate = true;
+      scene.add(instMesh);
+    });
+
+    // HELIPAD & ROOFTOP ARCHITECTURAL STRUCTURES
+    function createHelipadTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 128; cv.height = 128;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(0, 0, 128, 128);
+      // Yellow outer border & circle
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(64, 64, 46, 0, Math.PI * 2);
+      ctx.stroke();
+      // Bold 'H'
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 50px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('H', 64, 64);
+      return new THREE.CanvasTexture(cv);
+    }
+
+    const helipadMat = new THREE.MeshStandardMaterial({ map: createHelipadTexture(), roughness: 0.6 });
+    const acChillerMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7, metalness: 0.5 });
+    const antennaMastMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 });
+    const beaconLightMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
+    const beaconMeshes = [];
+
+    cityBuildings.forEach((b, idx) => {
+      // Helipads on selected wide roofs
+      if (b.sx >= 13 && b.sy > 45 && idx % 4 === 0) {
+        const helipad = new THREE.Mesh(new THREE.PlaneGeometry(9, 9).rotateX(-Math.PI / 2), helipadMat);
+        helipad.position.set(b.x, b.sy + 0.08, b.z);
+        scene.add(helipad);
+        b.rooftops.push(helipad);
+      }
+
+      // Rooftop AC chiller units
+      if (idx % 2 === 0) {
+        const acUnit = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 1.8), acChillerMat);
+        acUnit.position.set(b.x + (b.sx * 0.25), b.sy + 0.6, b.z + (b.sz * 0.25));
+        acUnit.castShadow = true;
+        scene.add(acUnit);
+        b.rooftops.push(acUnit);
+      }
+
+      // Antenna Masts & Red Warning Beacons on tall towers
+      if (b.sy > 65) {
+        const mastHeight = 8 + (b.sy * 0.1);
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.25, mastHeight, 6), antennaMastMat);
+        mast.position.set(b.x, b.sy + mastHeight / 2, b.z);
+        mast.castShadow = true;
+        scene.add(mast);
+        b.rooftops.push(mast);
+
+        const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.7, 6, 6), beaconLightMat);
+        beacon.position.set(b.x, b.sy + mastHeight + 0.4, b.z);
+        scene.add(beacon);
+        beaconMeshes.push(beacon);
+        b.rooftops.push(beacon);
+      }
+    });
+
+    // 1. COMMAND CITADEL, MULTI S-25 & S-90 RADAR SITES
+    const citadelGroup = new THREE.Group();
+    const domeMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(18, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x00f0ff, roughness: 0.15, metalness: 0.9, transparent: true, opacity: 0.85, emissive: 0x003344, emissiveIntensity: 0.5 })
+    );
+    citadelGroup.add(domeMesh);
+
+    // S-25 Early Warning Radar Dish
+    let s25RadarDestroyed = false;
+    const radarTower = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.5, 16, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 }));
+    radarTower.position.set(0, 8, 0);
+    citadelGroup.add(radarTower);
+
+    const radarDish = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 1.2, 1.4, 16), new THREE.MeshStandardMaterial({ color: 0x00f0ff, metalness: 0.9 }));
+    radarDish.rotation.x = Math.PI / 3;
+    radarDish.position.set(0, 17, 0);
+    citadelGroup.add(radarDish);
+    scene.add(citadelGroup);
+
+    // Multi S-25 / S-90 Auxiliary Phased Radar & Vertical Missile Tube Cluster Sites
+    const auxiliaryRadarDishes = [];
+    const auxRadars = [];
+    const auxRadarPositions = [new THREE.Vector3(-45, 0, -65), new THREE.Vector3(45, 0, 65)];
+    auxRadarPositions.forEach((pos, idx) => {
+      const auxGroup = new THREE.Group();
+      // Octagonal concrete launch pad
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 8.5, 1.6, 8), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 }));
+      pad.position.y = 0.8;
+      auxGroup.add(pad);
+
+      // Rotating auxiliary radar mast & dish
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 9, 8), new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 }));
+      mast.position.set(-2.5, 5.0, 0);
+      auxGroup.add(mast);
+
+      const dish = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 0.8, 0.8, 16), new THREE.MeshStandardMaterial({ color: idx === 0 ? 0x00f0ff : 0xf59e0b, metalness: 0.85 }));
+      dish.rotation.x = Math.PI / 3;
+      dish.position.set(-2.5, 10.0, 0);
+      auxGroup.add(dish);
+      auxiliaryRadarDishes.push(dish);
+
+      // Vertical missile canister tube cluster (4 tubes)
+      for (let tx = -1.2; tx <= 1.2; tx += 2.4) {
+        for (let tz = -1.2; tz <= 1.2; tz += 2.4) {
+          const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.75, 7.5, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 }));
+          tube.position.set(3.2 + tx, 4.0, tz);
+          auxGroup.add(tube);
+          const cap = new THREE.Mesh(new THREE.ConeGeometry(0.75, 0.8, 8), new THREE.MeshStandardMaterial({ color: 0xf43f5e }));
+          cap.position.set(3.2 + tx, 8.0, tz);
+          auxGroup.add(cap);
+        }
+      }
+
+      auxGroup.position.copy(pos);
+      scene.add(auxGroup);
+      auxRadars.push({ pos, dish, mast, pad, destroyed: false, group: auxGroup });
+    });
+
+    // 2. CYBER HIJACKING SPEAR ENERGY SHIELD & PHYSICAL PLASMA EMITTER STATION
+    let isSpearDestroyed = false;
+    const spearGroup = new THREE.Group();
+    const spearBase = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 4.8, 2.5, 8), new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.4, metalness: 0.9 }));
+    spearBase.position.set(0, 1.25, 36);
+    spearGroup.add(spearBase);
+    const spearMast = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.2, 14, 8), new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9 }));
+    spearMast.position.set(0, 8.5, 36);
+    spearGroup.add(spearMast);
+    const spearDish = new THREE.Mesh(new THREE.TorusGeometry(4.2, 0.5, 8, 24), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    spearDish.position.set(0, 15.5, 36);
+    spearGroup.add(spearDish);
+    scene.add(spearGroup);
+
+    const cyberShieldGeo = new THREE.SphereGeometry(95, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.5);
+    const cyberShieldMat = new THREE.MeshBasicMaterial({
+      color: 0xa855f7,
+      transparent: true,
+      opacity: 0.0,
+      wireframe: true
+    });
+    const cyberShieldMesh = new THREE.Mesh(cyberShieldGeo, cyberShieldMat);
+    cyberShieldMesh.position.set(0, 0, 0);
+    scene.add(cyberShieldMesh);
+
+    // DIRECTED BEAM WEAPONS (CIWS Turrets with glowing plasma crystal coils)
+    const beamGunTurrets = [
+      { pos: new THREE.Vector3(-36, 0, -36), coolingTimer: 0, ring: null, crystal: null, baseMesh: null, destroyed: false },
+      { pos: new THREE.Vector3(36, 0, -36), coolingTimer: 0, ring: null, crystal: null, baseMesh: null, destroyed: false },
+      { pos: new THREE.Vector3(-36, 0, 36), coolingTimer: 0, ring: null, crystal: null, baseMesh: null, destroyed: false },
+      { pos: new THREE.Vector3(36, 0, 36), coolingTimer: 0, ring: null, crystal: null, baseMesh: null, destroyed: false }
+    ];
+    beamGunTurrets.forEach(b => {
+      const baseTurret = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 3.5, 3.2, 8), new THREE.MeshStandardMaterial({ color: 0x3b0764, metalness: 0.9 }));
+      baseTurret.position.copy(b.pos).add(new THREE.Vector3(0, 1.6, 0));
+      baseTurret.castShadow = true;
+      scene.add(baseTurret);
+      b.baseMesh = baseTurret;
+
+      // Glowing crystal / plasma coil
+      const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(1.4, 0), new THREE.MeshBasicMaterial({ color: 0xa855f7 }));
+      crystal.position.copy(b.pos).add(new THREE.Vector3(0, 4.2, 0));
+      scene.add(crystal);
+      b.crystal = crystal;
+
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.45, 8, 16), new THREE.MeshBasicMaterial({ color: 0xa855f7 }));
+      ring.position.copy(b.pos).add(new THREE.Vector3(0, 3.5, 0));
+      ring.rotation.x = Math.PI / 2;
+      scene.add(ring);
+      b.ring = ring;
+    });
+
+    // 3. RECON DRONE AIRBASE & MILITARY RUNWAY
+    let airbaseDestroyed = false;
+    const airbasePos = new THREE.Vector3(95, 0, -85);
+    const airbaseGroup = new THREE.Group();
+    // Runway asphalt strip
+    const runway = new THREE.Mesh(new THREE.PlaneGeometry(28, 120).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 }));
+    runway.position.set(95, 0.05, -85);
+    runway.receiveShadow = true;
+    airbaseGroup.add(runway);
+
+    // Runway Centerline & Threshold Stripes
+    for (let rz = -50; rz <= 50; rz += 10) {
+      const stripe = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 5.0).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      stripe.position.set(95, 0.06, -85 + rz);
+      airbaseGroup.add(stripe);
+    }
+    // Stationary 3D drone models parked on tarmac
+    for (let d = -1; d <= 1; d += 2) {
+      const parkedDrone = new THREE.Group();
+      const pBody = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.6, 3.2), new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.85 }));
+      parkedDrone.add(pBody);
+      const pWing = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.2, 1.4), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+      pWing.position.set(0, 0.1, -0.2);
+      parkedDrone.add(pWing);
+      parkedDrone.position.set(112, 0.6, -85 + d * 22);
+      airbaseGroup.add(parkedDrone);
+    }
+    scene.add(airbaseGroup);
+
+    // 4. COASTAL NAVAL ZONE & HYDROGEN SUBMARINES
+    const playerSubs = [
+      { id: 0, name: 'SSBN-01 TRIDENT', pos: new THREE.Vector3(225, -0.4, -165), ready: true },
+      { id: 1, name: 'SSBN-02 PACIFIC SHIELD', pos: new THREE.Vector3(-225, -0.4, 165), ready: true }
+    ];
+    playerSubs.forEach(s => {
+      const subGroup = new THREE.Group();
+      // Hull
+      const hull = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3.0, 36, 14), new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.95 }));
+      hull.rotation.z = Math.PI / 2;
+      subGroup.add(hull);
+
+      // Conning Tower Sail
+      const sail = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.6, 7.5), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 }));
+      sail.position.set(0, 2.5, 0);
+      subGroup.add(sail);
+
+      // Horizontal dive planes
+      const divePlanes = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.3, 2.0), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85 }));
+      divePlanes.position.set(0, 2.2, 0);
+      subGroup.add(divePlanes);
+
+      // Missile deck hatches
+      for (let hx = -10; hx <= 10; hx += 5) {
+        const hatch = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.3, 8), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 }));
+        hatch.position.set(hx, 2.2, 0);
+        subGroup.add(hatch);
+      }
+
+      subGroup.position.copy(s.pos);
+      scene.add(subGroup);
+      s.mesh = subGroup;
+    });
+
+    // 5. UNDERGROUND ARMORED ICBM SILOS WITH DYNAMIC ACTUATING HATCHES
+    const friendlyBases = [
+      { id: 0, type: 'silo', pos: new THREE.Vector3(-20, 0, -20), ready: true, hatchOpen: 0 },
+      { id: 1, type: 'silo', pos: new THREE.Vector3(20, 0, -20), ready: true, hatchOpen: 0 },
+      { id: 2, type: 'silo', pos: new THREE.Vector3(-20, 0, 20), ready: true, hatchOpen: 0 },
+      { id: 3, type: 'silo', pos: new THREE.Vector3(20, 0, 20), ready: true, hatchOpen: 0 }
+    ];
+
+    friendlyBases.forEach(base => {
+      const siloGroup = new THREE.Group();
+      // Reinforced concrete subterranean pad
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(5.4, 6.2, 1.4, 16), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85 }));
+      pad.position.y = 0.7;
+      siloGroup.add(pad);
+
+      // Sliding blast doors (Left & Right halves)
+      const doorL = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.4, 2.2), new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.9 }));
+      doorL.position.set(0, 1.3, -1.1);
+      siloGroup.add(doorL);
+      base.doorLeft = doorL;
+
+      const doorR = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.4, 2.2), new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.9 }));
+      doorR.position.set(0, 1.3, 1.1);
+      siloGroup.add(doorR);
+      base.doorRight = doorR;
+
+      siloGroup.position.copy(base.pos);
+      scene.add(siloGroup);
+    });
+
+    // 6. CONTINUOUS PERIMETER RING OF 10 WHITE-PAINTED INTERCEPTOR SAM SILOS
+    const perimeterSAMBases = [];
+    const SAM_RING_COUNT = 10;
+    const SAM_RING_RADIUS = 168;
+    for (let i = 0; i < SAM_RING_COUNT; i++) {
+      const angle = (i / SAM_RING_COUNT) * Math.PI * 2;
+      const sx = Math.cos(angle) * SAM_RING_RADIUS;
+      const sz = Math.sin(angle) * SAM_RING_RADIUS;
+      const samPos = new THREE.Vector3(sx, 0, sz);
+
+      const samGroup = new THREE.Group();
+      // White hexagonal hardened bunker pad
+      const bunker = new THREE.Mesh(new THREE.CylinderGeometry(4.0, 4.6, 2.2, 6), new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.4, metalness: 0.8 }));
+      bunker.position.y = 1.1;
+      samGroup.add(bunker);
+
+      // Dual white angled missile launch canisters
+      const launcher = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.0, 4.8), new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85 }));
+      launcher.position.set(0, 3.0, 0);
+      launcher.rotation.x = -Math.PI * 0.28;
+      launcher.rotation.y = angle + Math.PI;
+      samGroup.add(launcher);
+
+      // Warning Strobe Beacon
+      const strobe = new THREE.Mesh(new THREE.SphereGeometry(0.5, 6, 6), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
+      strobe.position.set(0, 4.5, 0);
+      samGroup.add(strobe);
+
+      samGroup.position.copy(samPos);
+      scene.add(samGroup);
+
+      const samData = { id: friendlyBases.length, type: 'sam', pos: samPos, ready: true, launcherMesh: launcher };
+      friendlyBases.push(samData);
+      perimeterSAMBases.push(samData);
+    }
+
+    // 7. COMPREHENSIVE 25-SYSTEM SUPERPOWER ENEMY ARSENAL
+    const rawEnemyData = [
+      // TIER 1: DEFENSE & INTERCEPTORS (5)
+      { name: 'AEGIS-X SKY SHIELD', tier: 'DEFENSE', category: 'MULTI-TIER INTERCEPTOR GRID', coords: "39°54'N, 116°23'E", prob: 92, height: 50, color: '#f43f5e', threat: 'CRITICAL', briefing: 'Layered phased-array anti-ballistic shield coordinating interception vectors.' },
+      { name: 'TITANIUM DOME CIWS', tier: 'DEFENSE', category: 'CLOSE-IN WEAPONS SYSTEM', coords: "40°01'N, 116°15'E", prob: 88, height: 35, color: '#e11d48', threat: 'SEVERE', briefing: 'High-cadence rotary kinetic CIWS obliterating low-altitude strikes.' },
+      { name: 'HYPERION BEAM CANNON', tier: 'DEFENSE', category: 'DIRECTED ENERGY CANNON', coords: "40°18'N, 116°42'E", prob: 95, height: 60, color: '#ec4899', threat: 'CRITICAL', briefing: 'Megawatt laser cannon neutralizing inbound warheads during terminal approach.' },
+      { name: 'SPECTRE V-9 INTERCEPTOR', tier: 'DEFENSE', category: 'STRATOSPHERIC SAM ARRAY', coords: "40°32'N, 115°50'E", prob: 90, height: 55, color: '#e11d48', threat: 'EXTREME', briefing: 'Mach-7 vector-thrust interceptors engaging exo-atmospheric targets.' },
+      { name: 'VALKYRIE POINT-DEFENSE', tier: 'DEFENSE', category: 'MOBILE DEFENSE ARRAY', coords: "39°42'N, 117°05'E", prob: 85, height: 40, color: '#fb7185', threat: 'HIGH', briefing: 'Mobile hypersonic kinetic interceptors defending perimeter silos.' },
+
+      // TIER 2: OFFENSE & HYPERSONICS (5)
+      { name: 'VANGUARD HYPERSONIC GLIDER', tier: 'OFFENSE', category: 'HYPERSONIC GLIDE VEHICLE', coords: "37°15'N, 113°30'E", prob: 86, height: 44, color: '#f59e0b', threat: 'CRITICAL', briefing: 'Mach-15 skip-glide vehicle evading conventional radar detection arcs.' },
+      { name: 'DREADNOUGHT MIRV ICBM', tier: 'OFFENSE', category: 'HEAVY MULTI-WARHEAD ICBM', coords: "36°55'N, 112°45'E", prob: 84, height: 68, color: '#d97706', threat: 'CRITICAL', briefing: 'Heavy intercontinental ballistic missile deploying multiple independent warheads.' },
+      { name: 'SHADOW-STRIKE STEALTH CRUISE', tier: 'OFFENSE', category: 'TERRAIN-HUGGING CRUISE', coords: "38°40'N, 114°50'E", prob: 82, height: 32, color: '#a855f7', threat: 'SEVERE', briefing: 'Radar-absorbent subsonic cruise missile flying beneath radar horizons.' },
+      { name: 'ORBITAL KINETIC PENETRATOR', tier: 'OFFENSE', category: 'RODS FROM GOD', coords: "ORBITAL 450KM", prob: 96, height: 75, color: '#ef4444', threat: 'CRITICAL', briefing: 'Tungsten kinetic rod orbital strikes delivering non-nuclear devastating shockwaves.' },
+      { name: 'PLASMA-CORE BUNKER BUSTER', tier: 'OFFENSE', category: 'DEEP PENETRATION MUNITION', coords: "37°48'N, 113°10'E", prob: 87, height: 48, color: '#ea580c', threat: 'EXTREME', briefing: 'Thermobaric burrowing warhead designed to collapse underground bunkers.' },
+
+      // TIER 3: ELECTRONIC & CYBER WARFARE (5)
+      { name: 'GHOST-NET SATELLITE ARRAY', tier: 'CYBER', category: 'ORBITAL SURVEILLANCE', coords: "GEO-SYNC 36,000KM", prob: 80, height: 70, color: '#00f0ff', threat: 'HIGH', briefing: 'Global constellations granting pinpoint friendly launch tracking. Vulnerable to ASAT.' },
+      { name: 'BLACKOUT EMP EMITTER', tier: 'CYBER', category: 'HIGH-ALTITUDE EMP', coords: "39°12'N, 115°18'E", prob: 78, height: 50, color: '#38bdf8', threat: 'SEVERE', briefing: 'High-flux electromagnetic pulse generator blinding radar arrays.' },
+      { name: 'KRAKEN CYBER HIJACKER', tier: 'CYBER', category: 'CYBER INTRUSION SUITE', coords: "39°50'N, 116°55'E", prob: 85, height: 45, color: '#6366f1', threat: 'SEVERE', briefing: 'Advanced malware transmitter attempting to corrupt friendly telemetry.' },
+      { name: 'AURA JAMMING DOME', tier: 'CYBER', category: 'BROADBAND EW SHIELD', coords: "40°25'N, 116°10'E", prob: 89, height: 52, color: '#818cf8', threat: 'CRITICAL', briefing: 'Phased microwave dome jamming missile guidance sensors.' },
+      { name: 'QUANTUM DECOY ARRAY', tier: 'CYBER', category: 'SIGNATURE REPLICATOR', coords: "38°15'N, 114°20'E", prob: 75, height: 38, color: '#c084fc', threat: 'HIGH', briefing: 'Holographic radar spoofing array generating phantom strike vectors.' },
+
+      // TIER 4: NAVAL & AIR FLEET (5)
+      { name: 'PHANTOM STEALTH STRIKE JET', tier: 'FLEET', category: 'GEN-6 STEALTH JET', coords: "38°22'N, 115°05'E", prob: 85, height: 40, color: '#64748b', threat: 'SEVERE', briefing: 'Supercruising stealth air superiority and strike asset.' },
+      { name: 'LEVIATHAN NUCLEAR ATTACK SUB', tier: 'FLEET', category: 'DEEP-DIVING SSN', coords: "18°12'N, 109°30'E", prob: 83, height: 30, color: '#06b6d4', threat: 'EXTREME', briefing: 'Silent nuclear attack submarine lurking offshore to launch surprise salvos.' },
+      { name: 'POSEIDON SUPER-TORPEDO', tier: 'FLEET', category: 'COASTAL TSUNAMI WEAPON', coords: "18°35'N, 110°15'E", prob: 88, height: 32, color: '#0ea5e9', threat: 'CRITICAL', briefing: 'Autonomous nuclear drone torpedo capable of triggering seismic tidal surges.' },
+      { name: 'SKY-FORTRESS AWACS RADAR', tier: 'FLEET', category: 'AIRBORNE EARLY WARNING', coords: "39°10'N, 117°40'E", prob: 86, height: 58, color: '#3b82f6', threat: 'HIGH', briefing: 'Airborne radar fortress providing 360-degree look-down shoot-down capability.' },
+      { name: 'SWARM RECON DRONES', tier: 'FLEET', category: 'AUTONOMOUS DRONE SWARM', coords: "39°45'N, 116°00'E", prob: 70, height: 28, color: '#10b981', threat: 'MEDIUM', briefing: 'Networked micro-drones mapping city defense weak spots.' },
+
+      // TIER 5: COMMAND & LOGISTICS (5)
+      { name: 'IRON-CITADEL BUNKERS', tier: 'LOGISTICS', category: 'HARDENED COMMAND HQ', coords: "36°50'N, 112°00'E", prob: 90, height: 45, color: '#e11d48', threat: 'CRITICAL', briefing: 'Reinforced subterranean command complex coordinating all 5 offensive waves.' },
+      { name: 'AUTOMATED SILO RELOADERS', tier: 'LOGISTICS', category: 'RAPID MUNITIONS RELOADER', coords: "37°30'N, 112°50'E", prob: 82, height: 36, color: '#f59e0b', threat: 'SEVERE', briefing: 'Underground rail magazines replenishing missile silos in under 90 seconds.' },
+      { name: 'ADAPTIVE RADAR SHIELDING', tier: 'LOGISTICS', category: 'METAMATERIAL CAMOUFLAGE', coords: "41°05'N, 117°10'E", prob: 88, height: 60, color: '#14b8a6', threat: 'HIGH', briefing: 'Active electronic cancellation shrouding base installations.' },
+      { name: 'EARLY THREAT AI PREDICTOR', tier: 'LOGISTICS', category: 'NEURAL STRATEGY ENGINE', coords: "39°35'N, 116°30'E", prob: 85, height: 50, color: '#8b5cf6', threat: 'SEVERE', briefing: 'Quantum neural computing core anticipating friendly counter-battery fires.' },
+      { name: 'COUNTER-STRIKE AUTO PROTOCOL', tier: 'LOGISTICS', category: 'AUTOMATED RETALIATION', coords: "36°20'N, 111°45'E", prob: 94, height: 52, color: '#f43f5e', threat: 'CRITICAL', briefing: 'Dead-hand failsafe triggering immediate retaliation upon facility destruction.' }
+    ];
+
+    const enemyAssets = rawEnemyData.map((d, i) => {
+      const angle = (i / 25) * Math.PI * 2;
+      const dist = 720 + (i % 5) * 45;
+      const x = Math.round(Math.cos(angle) * dist);
+      const z = Math.round(Math.sin(angle) * dist);
+      return {
+        id: i,
+        name: d.name,
+        tier: d.tier,
+        category: d.category,
+        coords: d.coords,
+        health: 100,
+        threatLevel: d.threat,
+        briefing: d.briefing,
+        height: d.height,
+        color: d.color,
+        destroyed: false,
+        absPos: new THREE.Vector3(x, 0, z),
+        topPos: new THREE.Vector3(x, d.height, z),
+        interceptionProb: d.prob,
+        radarCoverage: 640
+      };
+    });
+
+    const enemyGroup = new THREE.Group();
+    enemyAssets.forEach(asset => {
+      const g = new THREE.Group();
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(20, asset.height, 20),
+        new THREE.MeshStandardMaterial({ color: new THREE.Color(asset.color), emissive: new THREE.Color(asset.color), emissiveIntensity: 0.35, roughness: 0.3, metalness: 0.85 })
+      );
+      m.position.set(0, asset.height / 2, 0);
+      m.castShadow = true;
+      m.userData = asset;
+      g.add(m);
+      g.position.copy(asset.absPos);
+      asset.mesh = m;
+      enemyGroup.add(g);
+    });
+    scene.add(enemyGroup);
+
+    // INTERACTIVE PINPOINT TARGET RETICLE (3D Tactical Crosshair)
+    const reticleGroup = new THREE.Group();
+    const reticleRing = new THREE.Mesh(
+      new THREE.RingGeometry(5.0, 6.2, 32),
+      new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide })
+    );
+    reticleRing.rotateX(-Math.PI / 2);
+    reticleGroup.add(reticleRing);
+
+    const reticleCore = new THREE.Mesh(
+      new THREE.RingGeometry(1.5, 2.5, 16),
+      new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide })
+    );
+    reticleCore.rotateX(-Math.PI / 2);
+    reticleGroup.add(reticleCore);
+
+    // Sky designation beacon line
+    const beaconGeo = new THREE.CylinderGeometry(0.3, 0.3, 140, 8);
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.6 });
+    const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
+    beaconMesh.position.y = 70;
+    reticleGroup.add(beaconMesh);
+
+    reticleGroup.position.set(0, 0.2, 0);
+    scene.add(reticleGroup);
+
+    let pinnedTargetCoords = new THREE.Vector3(0, 0, 0);
+
+    // RECON SURGICAL DRONE
+    const reconDrone = new THREE.Group();
+    const droneBody = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.8, 3.5), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9 }));
+    reconDrone.add(droneBody);
+    const droneLight = new THREE.PointLight(0xa855f7, 2.5, 25);
+    reconDrone.add(droneLight);
+    reconDrone.position.set(0, 60, 0);
+    scene.add(reconDrone);
+    let droneTargetPos = new THREE.Vector3(0, 60, 0);
+    let droneSpeed = 70;
+
+    // POOLS FOR 60 FPS ZERO-ALLOCATION GAMELOOP
+    const DEBRIS_SIZE = 120;
+    const debrisPool = [];
+    const debrisMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+    for (let i = 0; i < DEBRIS_SIZE; i++) {
+      const d = new THREE.Mesh(buildingBox, debrisMat);
+      d.visible = false;
+      scene.add(d);
+      debrisPool.push({ mesh: d, active: false, vel: new THREE.Vector3(), rotVel: new THREE.Vector3(), life: 0 });
+    }
+
+    const SHOCKWAVE_SIZE = 30;
+    const shockwavePool = [];
+    const shockGeo = new THREE.RingGeometry(1.0, 2.5, 32);
+    shockGeo.rotateX(-Math.PI / 2);
+    for (let i = 0; i < SHOCKWAVE_SIZE; i++) {
+      const s = new THREE.Mesh(shockGeo, new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.95, side: THREE.DoubleSide }));
+      s.visible = false;
+      scene.add(s);
+      shockwavePool.push({ mesh: s, active: false, scale: 1.0, opacity: 0.95 });
+    }
+
+    // LINGERING BLACK SMOKE & BURNING FIRE COLUMN PARTICLES
+    const SMOKE_MAX = 150;
+    const smokePool = [];
+    const smokeGeo = new THREE.DodecahedronGeometry(1.5, 0);
+    for (let i = 0; i < SMOKE_MAX; i++) {
+      const sm = new THREE.Mesh(smokeGeo, new THREE.MeshBasicMaterial({ color: 0x18181b, transparent: true, opacity: 0.75 }));
+      sm.visible = false;
+      scene.add(sm);
+      smokePool.push({ mesh: sm, active: false, vel: new THREE.Vector3(), life: 0, maxLife: 3.8, scale: 1.0 });
+    }
+
+    const FIRE_MAX = 70;
+    const firePool = [];
+    const fireGeo = new THREE.SphereGeometry(1.1, 5, 5);
+    for (let i = 0; i < FIRE_MAX; i++) {
+      const fm = new THREE.Mesh(fireGeo, new THREE.MeshBasicMaterial({ color: 0xff4500, transparent: true, opacity: 0.9 }));
+      fm.visible = false;
+      scene.add(fm);
+      firePool.push({ mesh: fm, active: false, vel: new THREE.Vector3(), life: 0, maxLife: 1.3, scale: 1.0 });
+    }
+
+    const activeSmokeEmitters = [];
+    function addSmokeColumn(pos, duration = 50.0, isHeavy = true) {
+      activeSmokeEmitters.push({
+        pos: pos.clone(),
+        duration: duration,
+        elapsed: 0,
+        interval: isHeavy ? 0.09 : 0.18,
+        timer: 0,
+        isHeavy: isHeavy
+      });
+    }
+
+    const WARHEAD_SIZE = 32;
+    const warheadPool = [];
+    for (let i = 0; i < WARHEAD_SIZE; i++) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.0, 5.0, 8), new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.9 }));
+      body.rotation.x = Math.PI / 2;
+      g.add(body);
+      const light = new THREE.PointLight(0xf43f5e, 2.8, 30);
+      g.add(light);
+      g.visible = false;
+      scene.add(g);
+      warheadPool.push({ group: g, active: false, vel: new THREE.Vector3(), targetPos: new THREE.Vector3(), hijacked: false, life: 0, isMassAttack: false });
+    }
+
+    const SAM_SIZE = 24;
+    const samPool = [];
+    for (let i = 0; i < SAM_SIZE; i++) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 3.5, 8), new THREE.MeshStandardMaterial({ color: 0x00f0ff, metalness: 0.9 }));
+      body.rotation.x = Math.PI / 2;
+      g.add(body);
+      const light = new THREE.PointLight(0x00f0ff, 2.5, 20);
+      g.add(light);
+      g.visible = false;
+      scene.add(g);
+      samPool.push({ group: g, active: false, dest: new THREE.Vector3(), speed: 200, life: 5.0 });
+    }
+
+    const BEAM_SIZE = 6;
+    const beamPool = [];
+    for (let i = 0; i < BEAM_SIZE; i++) {
+      const bMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.45, 0.45, 1, 8),
+        new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.9 })
+      );
+      bMesh.visible = false;
+      scene.add(bMesh);
+      beamPool.push({ mesh: bMesh, active: false, life: 0 });
+    }
+
+    const ICBM_SIZE = 12;
+    const icbmPool = [];
+    for (let i = 0; i < ICBM_SIZE; i++) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.25, 9.0, 10), new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9 }));
+      body.position.y = 4.5;
+      g.add(body);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(1.0, 3.0, 10), new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff }));
+      cone.position.y = 10.5;
+      g.add(cone);
+      g.visible = false;
+      scene.add(g);
+      icbmPool.push({ group: g, targetPos: new THREE.Vector3(), state: 'IGNITING', progress: 0, startPos: new THREE.Vector3(), active: false, isSubmarine: false });
+    }
+
+    // STATE VARIABLES
+    const waveConfigs = [
+      { name: 'SUPERPOWER RECON', count: 6, speed: 50 },
+      { name: 'HYPERSONIC CRUISE WAVE', count: 10, speed: 65 },
+      { name: 'ORBITAL KINETIC RAIN', count: 14, speed: 75 },
+      { name: 'MIRV SATURATION SWARM', count: 18, speed: 85 },
+      { name: 'TOTAL DOOMSDAY ARMAGEDDON', count: 24, speed: 95 }
+    ];
+
+    let currentWaveIdx = 0;
+    let combatPhase = 'PREPARATION';
+    let waveCountdown = 25.0;
+    let warheadsSpawnedInWave = 0;
+    let spawnTimer = 0.5;
+
+    let cityHealth = 100;
+    let samStock = 32;
+    const maxSamStock = 36;
+    let subStock = 6;
+    let beamHeat = 0;
+    let isJammingActive = false;
+    let isSpearActive = false;
+    let spearTimer = 0;
+    let doomsdayTriggered = false;
+
+    let score = 0;
+    let intercepts = 0;
+    let screenShake = 0;
+    let autoDefense = true;
+    let currentCamMode = 'METROPOLIS';
+    let activeCinematicICBM = null;
+
+    // FREE ORBIT CONTROLS (360-DEGREE, UNRESTRICTED PITCH/YAW, DOWN TO STREET LEVEL)
+    let orbitControls = null;
+    if (typeof THREE.OrbitControls !== 'undefined') {
+      orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+      orbitControls.enableDamping = true;
+      orbitControls.dampingFactor = 0.08;
+      orbitControls.screenSpacePanning = true;
+      orbitControls.minDistance = 4.0; // Down to street level!
+      orbitControls.maxDistance = 1500.0; // High strategic view
+      orbitControls.maxPolarAngle = Math.PI / 2 - 0.005; // Prevent dipping beneath ground
+      orbitControls.target.set(0, 15, 0);
+    }
+
+    // Camera View Transition Helper
+    function setCameraView(tx, ty, tz, px, py, pz) {
+      if (orbitControls) {
+        orbitControls.target.set(tx, ty, tz);
+        camera.position.set(px, py, pz);
+        orbitControls.update();
+      } else {
+        cameraTarget.set(tx, ty, tz);
+        camera.position.set(px, py, pz);
+        camera.lookAt(cameraTarget);
+      }
+    }
+
+    // TOUCH & MOUSE FALLBACK CONTROLS
+    let isDragging = false;
+    let prevTouchX = 0, prevTouchY = 0;
+    let spherical = { radius: 240, theta: 0, phi: Math.PI / 4 };
+    let cameraTarget = new THREE.Vector3(0, 20, 0);
+
+    function updateCameraPos() {
+      if (orbitControls) return;
+      spherical.phi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, spherical.phi));
+      camera.position.x = cameraTarget.x + spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+      camera.position.y = cameraTarget.y + spherical.radius * Math.cos(spherical.phi);
+      camera.position.z = cameraTarget.z + spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+      camera.lookAt(cameraTarget);
+    }
+
+    window.addEventListener('mousedown', e => {
+      if (orbitControls) return;
+      if (e.target.closest('.hud-panel') || e.target.closest('.drawer') || e.target.closest('.reticle-hud')) return;
+      isDragging = true;
+      prevTouchX = e.clientX;
+      prevTouchY = e.clientY;
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (orbitControls || !isDragging) return;
+      const dx = e.clientX - prevTouchX;
+      const dy = e.clientY - prevTouchY;
+      prevTouchX = e.clientX;
+      prevTouchY = e.clientY;
+      spherical.theta -= dx * 0.006;
+      spherical.phi -= dy * 0.006;
+      updateCameraPos();
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    let initialPinchDist = null;
+    window.addEventListener('touchstart', e => {
+      if (orbitControls) return;
+      if (e.target.closest('.hud-panel') || e.target.closest('.drawer') || e.target.closest('.reticle-hud')) return;
+      if (e.touches.length === 1) {
+        isDragging = true;
+        prevTouchX = e.touches[0].clientX;
+        prevTouchY = e.touches[0].clientY;
+      } else if (e.touches.length === 2) {
+        initialPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchmove', e => {
+      if (orbitControls) return;
+      if (e.target.closest('.hud-panel') || e.target.closest('.drawer') || e.target.closest('.reticle-hud')) return;
+      if (e.touches.length === 1 && isDragging) {
+        const dx = e.touches[0].clientX - prevTouchX;
+        const dy = e.touches[0].clientY - prevTouchY;
+        prevTouchX = e.touches[0].clientX;
+        prevTouchY = e.touches[0].clientY;
+        spherical.theta -= dx * 0.007;
+        spherical.phi -= dy * 0.007;
+        updateCameraPos();
+      } else if (e.touches.length === 2 && initialPinchDist) {
+        const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        const diff = initialPinchDist - currentDist;
+        spherical.radius = Math.max(10, Math.min(700, spherical.radius + diff * 0.4));
+        initialPinchDist = currentDist;
+        updateCameraPos();
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => { isDragging = false; initialPinchDist = null; });
+
+    window.addEventListener('wheel', e => {
+      if (orbitControls) return;
+      spherical.radius = Math.max(10, Math.min(700, spherical.radius + e.deltaY * 0.25));
+      updateCameraPos();
+    });
+
+    // UI UPDATE FUNCTION (FULL 12-LAYER & LAUNCH ASSET STATUS ENGINE)
+    function updateUI() {
+      const chPct = document.getElementById('city-health-pct');
+      if (chPct) chPct.innerText = Math.round(cityHealth) + '%';
+      const chBar = document.getElementById('city-health-bar');
+      if (chBar) chBar.style.width = Math.round(cityHealth) + '%';
+
+      // 1. Central S-25 Early Warning Radar Citadel
+      const s25El = document.getElementById('s25-radar-status');
+      const s25Layer = document.getElementById('layer-s25-status');
+      if (s25RadarDestroyed) {
+        if (s25El) { s25El.innerText = 'RADAR: OFFLINE (DESTROYED)'; s25El.style.color = '#f43f5e'; }
+        if (s25Layer) { s25Layer.innerText = 'DESTROYED (OFFLINE)'; s25Layer.style.color = '#f43f5e'; }
+      } else {
+        if (s25El) { s25El.innerText = 'RADAR: 360° ACTIVE'; s25El.style.color = '#00f0ff'; }
+        if (s25Layer) { s25Layer.innerText = '360° ACTIVE'; s25Layer.style.color = '#10b981'; }
+      }
+
+      // 2. Thriller S-20 Interceptors & 7. F-90 SAM Perimeter Bases
+      const operationalSAMs = friendlyBases.filter(b => b.type === 'sam' && !b.destroyed);
+      const samStockEl = document.getElementById('sam-stock-text');
+      const ringLayer = document.getElementById('layer-ring-status');
+      const samLayer = document.getElementById('layer-sam-status');
+      if (operationalSAMs.length === 0) {
+        if (samStockEl) { samStockEl.innerText = '0/0 [SITES DESTROYED]'; samStockEl.style.color = '#f43f5e'; }
+        if (ringLayer) { ringLayer.innerText = 'ALL SITES DESTROYED'; ringLayer.style.color = '#f43f5e'; }
+        if (samLayer) { samLayer.innerText = 'OFFLINE (0 SITES)'; samLayer.style.color = '#f43f5e'; }
+      } else {
+        if (samStockEl) { samStockEl.innerText = samStock + '/' + maxSamStock; samStockEl.style.color = '#00f0ff'; }
+        if (ringLayer) { ringLayer.innerText = operationalSAMs.length + '/10 BASES ACTIVE'; ringLayer.style.color = '#00f0ff'; }
+        if (samLayer) { samLayer.innerText = 'READY (' + samStock + '/' + maxSamStock + ')'; samLayer.style.color = '#00f0ff'; }
+      }
+
+      // 3. Thriller V-70 Trajectory Hub
+      const ttiLayer = document.getElementById('layer-tti-status');
+      if (ttiLayer) {
+        ttiLayer.innerText = s25RadarDestroyed ? 'DEGRADED (OFFLINE)' : 'TTI COMPLIANT';
+        ttiLayer.style.color = s25RadarDestroyed ? '#f59e0b' : '#00f0ff';
+      }
+
+      // 4. Thriller S-90 Auxiliary Phased Radars
+      const operationalAux = auxRadars.filter(a => !a.destroyed);
+      const s90Layer = document.getElementById('layer-s90-status');
+      if (s90Layer) {
+        s90Layer.innerText = operationalAux.length > 0 ? (operationalAux.length + '/2 ARMED') : '0/2 DESTROYED';
+        s90Layer.style.color = operationalAux.length > 0 ? '#f59e0b' : '#f43f5e';
+      }
+
+      // 5. Multi-Cloud Threat Archive
+      const arcLayer = document.getElementById('layer-archive-status');
+      if (arcLayer) {
+        arcLayer.innerText = cityHealth < 20 ? 'BACKUP SYNC' : 'TELEMETRY SYNC';
+      }
+
+      // 6. Directed Beam CIWS Turrets
+      const operationalTurrets = beamGunTurrets.filter(t => !t.destroyed);
+      const bHeatEl = document.getElementById('beam-heat-text');
+      const beamLayer = document.getElementById('layer-beam-status');
+      if (operationalTurrets.length === 0) {
+        if (bHeatEl) { bHeatEl.innerText = 'OFFLINE [TURRETS DESTROYED]'; bHeatEl.style.color = '#f43f5e'; }
+        if (beamLayer) { beamLayer.innerText = 'ALL TURRETS DESTROYED'; beamLayer.style.color = '#f43f5e'; }
+      } else {
+        if (bHeatEl) {
+          bHeatEl.innerText = Math.round(beamHeat) + '% [' + (beamHeat >= 80 ? 'OVERHEAT' : 'READY') + ']';
+          bHeatEl.style.color = beamHeat >= 80 ? '#f43f5e' : '#a855f7';
+        }
+        if (beamLayer) {
+          beamLayer.innerText = operationalTurrets.length + '/4 OPERATIONAL (' + Math.round(beamHeat) + '% HEAT)';
+          beamLayer.style.color = '#a855f7';
+        }
+      }
+
+      // 8. Hijacking Spear Cyber EW Station
+      const spearLayer = document.getElementById('layer-spear-status');
+      const spearBtn = document.getElementById('spear-btn');
+      if (isSpearDestroyed) {
+        if (spearLayer) { spearLayer.innerText = 'EMITTER DESTROYED'; spearLayer.style.color = '#f43f5e'; }
+        if (spearBtn) {
+          spearBtn.innerText = '🗡️ SPEAR OFFLINE';
+          spearBtn.style.opacity = '0.4';
+          spearBtn.style.borderColor = '#f43f5e';
+          spearBtn.style.color = '#f43f5e';
+        }
+      } else {
+        if (spearLayer) {
+          spearLayer.innerText = isSpearActive ? 'ACTIVE (DEFLECTING)' : 'STANDBY';
+          spearLayer.style.color = '#38bdf8';
+        }
+        if (spearBtn) {
+          spearBtn.innerText = '🗡️ HIJACK SPEAR SHIELD';
+          spearBtn.style.opacity = '1';
+          spearBtn.style.borderColor = '';
+          spearBtn.style.color = '';
+        }
+      }
+
+      // 9. Master V7 Doomsday Hub
+      const doomLayer = document.getElementById('layer-doomsday-status');
+      const operationalSilos = friendlyBases.filter(b => b.type === 'silo' && !b.destroyed);
+      const operationalSubs = playerSubs.filter(s => !s.destroyed);
+      if (doomLayer) {
+        if (operationalSilos.length === 0 && operationalSubs.length === 0) {
+          doomLayer.innerText = 'NO RETALIATION ASSETS';
+          doomLayer.style.color = '#f43f5e';
+        } else {
+          doomLayer.innerText = 'DEAD-HAND ENGAGED';
+          doomLayer.style.color = '#f43f5e';
+        }
+      }
+
+      // 10. Coastal Hydrogen Submarines
+      const subLayer = document.getElementById('layer-sub-status');
+      if (subLayer) {
+        subLayer.innerText = operationalSubs.length > 0 ? (operationalSubs.length + '/2 ON PATROL') : 'ALL SUBS SUNK';
+        subLayer.style.color = operationalSubs.length > 0 ? '#06b6d4' : '#f43f5e';
+      }
+      const sStockEl = document.getElementById('sub-stock-text');
+      if (sStockEl) {
+        if (operationalSubs.length === 0) {
+          sStockEl.innerText = '0/0 [ALL SUNK]';
+          sStockEl.style.color = '#f43f5e';
+        } else {
+          sStockEl.innerText = subStock + '/6 READY';
+          sStockEl.style.color = '#f59e0b';
+        }
+      }
+
+      // 11. Recon & Surgical Drone Airbase
+      const droneLayer = document.getElementById('layer-drone-status');
+      if (droneLayer) {
+        if (airbaseDestroyed) {
+          droneLayer.innerText = 'AIRBASE CRATERED';
+          droneLayer.style.color = '#f43f5e';
+        } else {
+          droneLayer.innerText = reconDrone.position.distanceTo(droneTargetPos) < 10 ? 'ON TARGET' : 'AIRBORNE';
+          droneLayer.style.color = '#10b981';
+        }
+      }
+
+      // 12. Underground Armored ICBM Silos
+      const siloLayer = document.getElementById('layer-silo-status');
+      if (siloLayer) {
+        siloLayer.innerText = operationalSilos.length > 0 ? (operationalSilos.length + '/4 READY') : 'ALL SILOS DESTROYED';
+        siloLayer.style.color = operationalSilos.length > 0 ? '#f59e0b' : '#f43f5e';
+      }
+
+      // Tactical HUD strike button states & visual disabling
+      const siloBtn = document.getElementById('silo-strike-btn');
+      const intelSiloBtn = document.getElementById('intel-icbm-btn');
+      if (operationalSilos.length === 0) {
+        [siloBtn, intelSiloBtn].forEach(b => {
+          if (!b) return;
+          b.innerText = '🚀 SILOS DESTROYED';
+          b.style.opacity = '0.4';
+          b.style.borderColor = '#f43f5e';
+          b.style.color = '#f43f5e';
+          b.style.textDecoration = 'line-through';
+        });
+      } else {
+        [siloBtn, intelSiloBtn].forEach(b => {
+          if (!b) return;
+          b.innerText = b === siloBtn ? '🚀 SILO ICBM' : '🚀 ICBM SALVO';
+          b.style.opacity = '1';
+          b.style.borderColor = '';
+          b.style.color = '';
+          b.style.textDecoration = 'none';
+        });
+      }
+
+      const subBtn = document.getElementById('sub-strike-btn');
+      const intelSubBtn = document.getElementById('intel-sub-btn');
+      if (operationalSubs.length === 0) {
+        [subBtn, intelSubBtn].forEach(b => {
+          if (!b) return;
+          b.innerText = '🌊 SUBS SUNK';
+          b.style.opacity = '0.4';
+          b.style.borderColor = '#f43f5e';
+          b.style.color = '#f43f5e';
+          b.style.textDecoration = 'line-through';
+        });
+      } else {
+        [subBtn, intelSubBtn].forEach(b => {
+          if (!b) return;
+          b.innerText = b === subBtn ? '🌊 SUB SLBM' : '🌊 SUB SURGICAL';
+          b.style.opacity = '1';
+          b.style.borderColor = '';
+          b.style.color = '';
+          b.style.textDecoration = 'none';
+        });
+      }
+
+      const droneBtn = document.getElementById('drone-strike-btn');
+      const intelDroneBtn = document.getElementById('intel-drone-btn');
+      if (airbaseDestroyed) {
+        [droneBtn, intelDroneBtn].forEach(b => {
+          if (!b) return;
+          b.innerText = '🛸 AIRBASE CRATERED';
+          b.style.opacity = '0.4';
+          b.style.borderColor = '#f43f5e';
+          b.style.color = '#f43f5e';
+          b.style.textDecoration = 'line-through';
+        });
+      } else {
+        [droneBtn, intelDroneBtn].forEach(b => {
+          if (!b) return;
+          b.innerText = b === droneBtn ? '🛸 RECON DRONE' : '🛸 DRONE PINPOINT';
+          b.style.opacity = '1';
+          b.style.borderColor = '';
+          b.style.color = '';
+          b.style.textDecoration = 'none';
+        });
+      }
+
+      const scoreEl = document.getElementById('score-text');
+      if (scoreEl) scoreEl.innerText = score;
+      const wTimerEl = document.getElementById('wave-timer-text');
+      if (wTimerEl) wTimerEl.innerText = Math.round(waveCountdown) + 's';
+      const wTitleEl = document.getElementById('wave-title');
+      if (wTitleEl) wTitleEl.innerText = 'WAVE ' + (currentWaveIdx + 1) + '/5: ' + waveConfigs[currentWaveIdx].name;
+
+      const activeThreats = warheadPool.filter(w => w.active).length;
+      const tc = document.getElementById('threat-counter');
+      if (tc) tc.innerText = 'INBOUND HOSTILE VECTORS: ' + activeThreats;
+
+      const defcon = document.getElementById('defcon-badge');
+      if (defcon) {
+        if (activeThreats >= 8 || cityHealth < 35) {
+          defcon.innerText = 'DEFCON 1: MAXIMUM ALERT';
+          defcon.style.color = '#f43f5e';
+        } else if (combatPhase === 'WAVE_ACTIVE') {
+          defcon.innerText = 'DEFCON 2: INTERCEPT ENGAGED';
+          defcon.style.color = '#f59e0b';
+        } else {
+          defcon.innerText = 'DEFCON 3: STANDBY AIR DEFENSE';
+          defcon.style.color = '#10b981';
+        }
+      }
+    }
+
+    function showStatus(text) {
+      const t = document.getElementById('status-toast');
+      if (t) {
+        t.innerText = text;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 2500);
+      }
+    }
+
+    function triggerExplosion(pos, isHeavy, colorHex) {
+      initAudio();
+      playExplosion(isHeavy);
+      screenShake = isHeavy ? 35 : 18;
+
+      const sw = shockwavePool.find(s => !s.active);
+      if (sw) {
+        sw.active = true;
+        sw.scale = 1.0;
+        sw.opacity = 0.95;
+        sw.mesh.position.copy(pos);
+        sw.mesh.scale.set(1, 1, 1);
+        sw.mesh.material.color.setHex(colorHex || 0xffaa00);
+        sw.mesh.visible = true;
+      }
+
+      // Debris physics
+      let count = 0;
+      const targetCount = isHeavy ? 30 : 15;
+      for (let i = 0; i < debrisPool.length && count < targetCount; i++) {
+        const d = debrisPool[i];
+        if (!d.active) {
+          d.active = true;
+          const s = 1.0 + Math.random() * 1.8;
+          d.mesh.scale.set(s, s, s);
+          d.mesh.position.set(pos.x + (Math.random() - 0.5) * 6, Math.max(1, pos.y) + Math.random() * 8, pos.z + (Math.random() - 0.5) * 6);
+          const spd = 25 + Math.random() * 45;
+          const ang = Math.random() * Math.PI * 2;
+          d.vel.set(Math.cos(ang) * spd, 15 + Math.random() * 30, Math.sin(ang) * spd);
+          d.rotVel.set((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
+          d.life = 3.5;
+          d.mesh.visible = true;
+          count++;
+        }
+      }
+    }
+
+    // --- DYNAMIC BUILDING, DEFENSE SYSTEM & ENEMY DESTRUCTION ENGINE ---
+
+    // 1. DYNAMIC SKYSCRAPER COLLAPSE & MATERIAL CHARGING
+    function destroyBuilding(b, impactPoint) {
+      if (!b || b.destroyed) return;
+      b.destroyed = true;
+      b.health = 0;
+
+      // Localized explosion & structural debris
+      const blastPos = impactPoint || new THREE.Vector3(b.x, b.sy * 0.7, b.z);
+      triggerExplosion(blastPos, true, 0xff4500);
+
+      // Charred / burnt soot texture coloring on InstancedMesh
+      if (b.instMesh && b.instMesh.instanceColor) {
+        b.instMesh.setColorAt(b.instIdx, new THREE.Color(0.12, 0.12, 0.14));
+        b.instMesh.instanceColor.needsUpdate = true;
+      }
+
+      // Structural height collapse to rubble ruins (22% original height)
+      const collapsedH = Math.max(3.8, b.sy * 0.22);
+      dummyObj.position.set(b.x, collapsedH / 2, b.z);
+      dummyObj.scale.set(b.sx * 1.15, collapsedH, b.sz * 1.15);
+      dummyObj.rotation.set((Math.random() - 0.5) * 0.08, (Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.08);
+      dummyObj.updateMatrix();
+      b.instMesh.setMatrixAt(b.instIdx, dummyObj.matrix);
+      b.instMesh.instanceMatrix.needsUpdate = true;
+
+      // Hide detached rooftop helipads, antennas, and AC units
+      if (b.rooftops) {
+        b.rooftops.forEach(r => { r.visible = false; });
+      }
+
+      // Lingering black smoke and burning fire plume
+      addSmokeColumn(new THREE.Vector3(b.x, collapsedH, b.z), 55.0, true);
+
+      // Damage metropolis integrity
+      const dmg = 3.2 + (b.sy / 75) * 4.0;
+      cityHealth = Math.max(0, cityHealth - dmg);
+      showStatus('COLLAPSE: SKYSCRAPER OBLITERATED AT SECTOR (' + Math.round(b.x) + ', ' + Math.round(b.z) + ')');
+      updateUI();
+    }
+
+    // 2. PLAYER DEFENSE SYSTEM & LAUNCH PAD DESTRUCTION
+    function destroyPlayerSilo(silo) {
+      if (silo.destroyed) return;
+      silo.destroyed = true;
+      silo.ready = false;
+      triggerExplosion(silo.pos, true, 0xff3300);
+      addSmokeColumn(silo.pos, 60.0, true);
+
+      if (silo.doorLeft) {
+        silo.doorLeft.rotation.z = 0.8;
+        silo.doorLeft.position.y = 1.9;
+        if (silo.doorLeft.material) silo.doorLeft.material.color.setHex(0x18181b);
+      }
+      if (silo.doorRight) {
+        silo.doorRight.rotation.z = -0.8;
+        silo.doorRight.position.y = 1.9;
+        if (silo.doorRight.material) silo.doorRight.material.color.setHex(0x18181b);
+      }
+      showStatus('CRITICAL ALERT: ICBM LAUNCH SILO #' + (silo.id + 1) + ' DESTROYED');
+      updateUI();
+    }
+
+    function destroyPlayerSAM(sam) {
+      if (sam.destroyed) return;
+      sam.destroyed = true;
+      sam.ready = false;
+      triggerExplosion(sam.pos, true, 0xff5500);
+      addSmokeColumn(sam.pos, 50.0, true);
+
+      if (sam.launcherMesh) {
+        sam.launcherMesh.rotation.z = 1.35;
+        sam.launcherMesh.position.y = 1.6;
+        if (sam.launcherMesh.material) sam.launcherMesh.material.color.setHex(0x1e293b);
+      }
+      samStock = Math.max(0, samStock - 4);
+      showStatus('WARNING: PERIMETER SAM SITE #' + (sam.id - 3) + ' OBLITERATED');
+      updateUI();
+    }
+
+    function destroyPlayerS25Radar() {
+      if (s25RadarDestroyed) return;
+      s25RadarDestroyed = true;
+      triggerExplosion(new THREE.Vector3(0, 16, 0), true, 0x00f0ff);
+      addSmokeColumn(new THREE.Vector3(0, 12, 0), 60.0, true);
+      radarDish.rotation.x = Math.PI * 0.65;
+      if (radarDish.material) radarDish.material.color.setHex(0x18181b);
+      showStatus('CRITICAL LOSS: S-25 EARLY WARNING RADAR DESTROYED');
+      updateUI();
+    }
+
+    function destroyPlayerAuxRadar(idx) {
+      const aux = auxRadars[idx];
+      if (!aux || aux.destroyed) return;
+      aux.destroyed = true;
+      triggerExplosion(aux.pos, true, 0xf59e0b);
+      addSmokeColumn(aux.pos, 50.0, true);
+      if (aux.dish) {
+        aux.dish.rotation.x = Math.PI * 0.7;
+        if (aux.dish.material) aux.dish.material.color.setHex(0x18181b);
+      }
+      showStatus('S-90 AUXILIARY RADAR SITE #' + (idx + 1) + ' DESTROYED');
+      updateUI();
+    }
+
+    function destroyPlayerBeamTurret(turret) {
+      if (turret.destroyed) return;
+      turret.destroyed = true;
+      triggerExplosion(turret.pos, true, 0xa855f7);
+      addSmokeColumn(turret.pos, 50.0, true);
+      if (turret.crystal) turret.crystal.visible = false;
+      if (turret.ring) {
+        turret.ring.position.y = 1.0;
+        if (turret.ring.material) turret.ring.material.color.setHex(0x18181b);
+      }
+      if (turret.baseMesh && turret.baseMesh.material) turret.baseMesh.material.color.setHex(0x18181b);
+      showStatus('DIRECTED BEAM CIWS TURRET SHATTERED');
+      updateUI();
+    }
+
+    function destroyPlayerAirbase() {
+      if (airbaseDestroyed) return;
+      airbaseDestroyed = true;
+      triggerExplosion(airbasePos, true, 0xff4500);
+      addSmokeColumn(airbasePos, 60.0, true);
+      setTimeout(() => triggerExplosion(airbasePos.clone().add(new THREE.Vector3(12, 1, 20)), true, 0xff7700), 220);
+      showStatus('AIRBASE CRATERED: RECON DRONE FLEET INOPERABLE');
+      updateUI();
+    }
+
+    function destroyPlayerSubmarine(sub) {
+      if (sub.destroyed) return;
+      sub.destroyed = true;
+      sub.ready = false;
+      triggerExplosion(sub.pos, true, 0x0284c7);
+      // Surface oil slick and dark smoke plume
+      addSmokeColumn(new THREE.Vector3(sub.pos.x, 0.2, sub.pos.z), 60.0, true);
+      if (sub.mesh) {
+        sub.mesh.rotation.x = 0.55;
+        sub.mesh.position.y = -8.5; // sink beneath coastal water
+      }
+      subStock = Math.max(0, subStock - 3);
+      showStatus('MAYDAY: ' + sub.name + ' HIT AND SUNK');
+      updateUI();
+    }
+
+    function destroyPlayerSpearStation() {
+      if (isSpearDestroyed) return;
+      isSpearDestroyed = true;
+      triggerExplosion(new THREE.Vector3(0, 8, 36), true, 0x38bdf8);
+      addSmokeColumn(new THREE.Vector3(0, 2, 36), 55.0, true);
+      if (spearDish) spearDish.visible = false;
+      if (spearMast) spearMast.rotation.x = 1.35;
+      if (spearBase && spearBase.material) spearBase.material.color.setHex(0x18181b);
+      isSpearActive = false;
+      cyberShieldMat.opacity = 0;
+      showStatus('CRITICAL LOSS: CYBER SPEAR EW STATION DESTROYED');
+      updateUI();
+    }
+
+    // Check direct hits on player installations
+    function checkPlayerDefenseHit(pos) {
+      // 1. Silos (friendlyBases 0..3)
+      for (let i = 0; i < 4; i++) {
+        const s = friendlyBases[i];
+        if (s && !s.destroyed && s.pos.distanceTo(pos) < 14.0) {
+          destroyPlayerSilo(s);
+          return true;
+        }
+      }
+      // 2. Perimeter SAM outposts (friendlyBases 4..13)
+      for (let i = 4; i < friendlyBases.length; i++) {
+        const sam = friendlyBases[i];
+        if (sam && !sam.destroyed && sam.pos.distanceTo(pos) < 14.0) {
+          destroyPlayerSAM(sam);
+          return true;
+        }
+      }
+      // 3. Central S-25 Early Warning Radar Citadel
+      if (!s25RadarDestroyed && pos.distanceTo(new THREE.Vector3(0, 0, 0)) < 18.0) {
+        destroyPlayerS25Radar();
+        return true;
+      }
+      // 4. S-90 Auxiliary Radars
+      for (let i = 0; i < auxRadars.length; i++) {
+        const aux = auxRadars[i];
+        if (aux && !aux.destroyed && aux.pos.distanceTo(pos) < 14.0) {
+          destroyPlayerAuxRadar(i);
+          return true;
+        }
+      }
+      // 5. Directed Beam Turrets
+      for (let i = 0; i < beamGunTurrets.length; i++) {
+        const t = beamGunTurrets[i];
+        if (t && !t.destroyed && t.pos.distanceTo(pos) < 12.0) {
+          destroyPlayerBeamTurret(t);
+          return true;
+        }
+      }
+      // 6. Airbase & Drone Runway
+      if (!airbaseDestroyed && pos.distanceTo(airbasePos) < 28.0) {
+        destroyPlayerAirbase();
+        return true;
+      }
+      // 7. Coastal Submarines
+      for (let i = 0; i < playerSubs.length; i++) {
+        const sub = playerSubs[i];
+        if (sub && !sub.destroyed && sub.pos.distanceTo(pos) < 24.0) {
+          destroyPlayerSubmarine(sub);
+          return true;
+        }
+      }
+      // 8. Cyber Spear EW Station
+      if (!isSpearDestroyed && pos.distanceTo(new THREE.Vector3(0, 0, 36)) < 15.0) {
+        destroyPlayerSpearStation();
+        return true;
+      }
+      return false;
+    }
+
+    // Check blast radius collateral damage for ground detonations
+    function checkRadiusDamage(pos, radius) {
+      for (let bi = 0; bi < cityBuildings.length; bi++) {
+        const b = cityBuildings[bi];
+        if (b.destroyed) continue;
+        const dist = Math.hypot(b.x - pos.x, b.z - pos.z);
+        if (dist < radius) {
+          destroyBuilding(b, new THREE.Vector3(b.x, b.sy * 0.4, b.z));
+        }
+      }
+      checkPlayerDefenseHit(pos);
+    }
+
+    // 3. EQUAL ENEMY ARSENAL DESTRUCTION MECHANICS
+    function destroyEnemyAsset(asset) {
+      if (!asset || asset.destroyed) return;
+      asset.destroyed = true;
+      asset.health = 0;
+      asset.threatLevel = 'NEUTRALIZED';
+      asset.interceptionProb = 0;
+
+      if (asset.mesh) {
+        // Physical collapse to 18% height
+        const ruinH = Math.max(3.0, asset.height * 0.18);
+        asset.mesh.scale.set(1.3, ruinH / asset.height, 1.3);
+        asset.mesh.position.y = ruinH / 2;
+        asset.mesh.rotation.set((Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.15, (Math.random() - 0.5) * 0.1);
+
+        if (asset.mesh.material) {
+          asset.mesh.material.color.setHex(0x18181b);
+          asset.mesh.material.emissive.setHex(0x3a0000);
+          asset.mesh.material.roughness = 0.95;
+          asset.mesh.material.metalness = 0.1;
+        }
+      }
+
+      // Persistent smoke & fire column on enemy site
+      addSmokeColumn(asset.absPos, 60.0, true);
+
+      // Multi-stage heavy destruction explosions
+      triggerExplosion(asset.absPos, true, 0xff3300);
+      setTimeout(() => triggerExplosion(asset.absPos.clone().add(new THREE.Vector3((Math.random()-0.5)*15, 6, (Math.random()-0.5)*15)), true, 0xff7700), 200);
+      setTimeout(() => triggerExplosion(asset.absPos.clone().add(new THREE.Vector3((Math.random()-0.5)*15, 2, (Math.random()-0.5)*15)), false, 0x00f0ff), 400);
+
+      score += 1500;
+      showStatus('TARGET OBLITERATED: ' + asset.name + ' [COLLAPSED]');
+      updateUI();
+      populateIntelSelect(document.querySelector('.tier-tab-btn.btn-active')?.getAttribute('data-tier') || 'ALL');
+      selectEnemySystem(asset);
+    }
+
+    // Intelligently acquire hostile targets (Buildings or Player Defense Bases)
+    function getHostileAttackTarget() {
+      const r = Math.random();
+      // 35% chance to target a specific operational player defense base
+      if (r < 0.35) {
+        const targets = [];
+        friendlyBases.filter(b => !b.destroyed).forEach(b => targets.push(b.pos));
+        playerSubs.filter(s => !s.destroyed).forEach(s => targets.push(s.pos));
+        beamGunTurrets.filter(t => !t.destroyed).forEach(t => targets.push(t.pos));
+        if (!s25RadarDestroyed) targets.push(new THREE.Vector3(0, 0, 0));
+        if (!airbaseDestroyed) targets.push(airbasePos);
+
+        if (targets.length > 0) {
+          const chosen = targets[Math.floor(Math.random() * targets.length)];
+          return new THREE.Vector3(chosen.x + (Math.random() - 0.5) * 6, 0, chosen.z + (Math.random() - 0.5) * 6);
+        }
+      }
+      // 50% chance to target an intact city skyscraper
+      const intactBuildings = cityBuildings.filter(b => !b.destroyed);
+      if (intactBuildings.length > 0 && r < 0.85) {
+        const b = intactBuildings[Math.floor(Math.random() * intactBuildings.length)];
+        return new THREE.Vector3(b.x, 0, b.z);
+      }
+      // Random metropolis coordinate
+      return new THREE.Vector3((Math.random() - 0.5) * 180, 0, (Math.random() - 0.5) * 180);
+    }
+
+    // FIRE SAM INTERCEPTOR (Validates operational launchers)
+    function fireSAM(dest) {
+      if (samStock <= 0) return;
+      const operationalSAMs = friendlyBases.filter(b => b.type === 'sam' && !b.destroyed);
+      if (operationalSAMs.length === 0) {
+        showStatus('ERROR: ALL PERIMETER SAM BATTERIES DESTROYED');
+        return;
+      }
+      const sam = samPool.find(s => !s.active);
+      if (!sam) return;
+
+      initAudio();
+      playTone(450, 0.4, 'triangle', 200);
+      samStock--;
+      updateUI();
+
+      operationalSAMs.sort((a, b) => a.pos.distanceTo(dest) - b.pos.distanceTo(dest));
+      const samBase = operationalSAMs[0];
+      sam.active = true;
+      sam.group.position.copy(samBase.pos).add(new THREE.Vector3(0, 2, 0));
+      sam.dest.copy(dest);
+      sam.life = 5.0;
+      sam.group.visible = true;
+    }
+
+    // DIRECTED BEAM GUN (CIWS Laser - Validates operational turrets)
+    function fireDirectedBeam(targetPos) {
+      if (beamHeat >= 80) return;
+      const operationalTurrets = beamGunTurrets.filter(t => !t.destroyed && t.coolingTimer <= 0);
+      if (operationalTurrets.length === 0) return;
+
+      operationalTurrets.sort((a, b) => a.pos.distanceTo(targetPos) - b.pos.distanceTo(targetPos));
+      const turret = operationalTurrets[0];
+      const beam = beamPool.find(b => !b.active);
+      if (!beam) return;
+
+      initAudio();
+      playLaserBeam();
+      beamHeat = Math.min(100, beamHeat + 22);
+      turret.coolingTimer = 2.5;
+
+      const start = turret.pos.clone().add(new THREE.Vector3(0, 3.5, 0));
+      const end = targetPos;
+      const dist = start.distanceTo(end);
+
+      beam.active = true;
+      beam.life = 0.25;
+      beam.mesh.position.copy(start).add(end).multiplyScalar(0.5);
+      beam.mesh.scale.set(1, dist, 1);
+      beam.mesh.lookAt(end);
+      beam.mesh.rotateX(Math.PI / 2);
+      beam.mesh.visible = true;
+
+      // Vaporize warhead if close
+      warheadPool.forEach(w => {
+        if (w.active && w.group.position.distanceTo(targetPos) < 22.0) {
+          triggerExplosion(w.group.position, false, 0xa855f7);
+          w.active = false;
+          w.group.visible = false;
+          score += 350;
+          intercepts++;
+          showStatus('DIRECTED BEAM INCINERATED HOSTILE WARHEAD');
+        }
+      });
+      updateUI();
+    }
+
+    // PINPOINT SURGICAL STRIKES (Validates operational launch platforms)
+    function launchPinpointStrike(isSubmarine, isDrone) {
+      if (isSubmarine) {
+        if (subStock <= 0) {
+          showStatus('ALL SUBMARINE SLBM TUBES EMPTY');
+          return;
+        }
+        const readySub = playerSubs.find(s => !s.destroyed);
+        if (!readySub) {
+          showStatus('ERROR: ALL HYDROGEN SUBMARINES SUNK / INOPERABLE');
+          return;
+        }
+        subStock--;
+        const icbm = icbmPool.find(m => !m.active);
+        if (!icbm) return;
+
+        initAudio();
+        playTone(180, 1.2, 'sine', 40);
+        showStatus('HYDROGEN SUBMARINE LAUNCHED SURGICAL SLBM');
+
+        icbm.active = true;
+        icbm.isSubmarine = true;
+        icbm.targetPos.copy(pinnedTargetCoords);
+        icbm.state = 'IGNITING';
+        icbm.progress = 0;
+        icbm.startPos.copy(readySub.pos);
+        icbm.group.position.copy(readySub.pos);
+        icbm.group.visible = true;
+      } else if (isDrone) {
+        if (airbaseDestroyed) {
+          showStatus('ERROR: AIRBASE CRATERED - RECON DRONES GROUNDED');
+          return;
+        }
+        initAudio();
+        playTone(700, 0.4, 'triangle');
+        droneTargetPos.copy(pinnedTargetCoords).add(new THREE.Vector3(0, 50, 0));
+        showStatus('RECON DRONE DISPATCHED TO DESIGNATE PINPOINT TARGET');
+        setTimeout(() => {
+          triggerExplosion(pinnedTargetCoords, false, 0xa855f7);
+          // Check if an enemy asset was struck by drone
+          const hitEnemy = enemyAssets.find(a => !a.destroyed && a.absPos.distanceTo(pinnedTargetCoords) < 45.0);
+          if (hitEnemy) {
+            destroyEnemyAsset(hitEnemy);
+          }
+          score += 500;
+          showStatus('RECON DRONE SURGICAL STRIKE COMPLETED');
+        }, 2200);
+      } else {
+        // Silo ICBM
+        const operationalSilos = friendlyBases.filter(b => b.type === 'silo' && !b.destroyed);
+        if (operationalSilos.length === 0) {
+          showStatus('ERROR: ALL STRATEGIC SILOS DESTROYED - NO RETALIATION CAPABILITY');
+          return;
+        }
+        const readySilo = operationalSilos[0];
+        const icbm = icbmPool.find(m => !m.active);
+        if (!icbm) return;
+
+        initAudio();
+        playTone(130, 1.4, 'sawtooth', 30);
+        showStatus('STRATEGIC SILO EXECUTED PINPOINT BALLISTIC STRIKE');
+
+        icbm.active = true;
+        icbm.isSubmarine = false;
+        icbm.targetPos.copy(pinnedTargetCoords);
+        icbm.state = 'IGNITING';
+        icbm.progress = 0;
+        icbm.startPos.copy(readySilo.pos);
+        icbm.group.position.copy(readySilo.pos);
+        icbm.group.visible = true;
+      }
+      updateUI();
+    }
+
+    // AUTOMATED MASTER V7 DOOMSDAY PROTOCOL
+    function executeMasterV7Doomsday() {
+      if (doomsdayTriggered) return;
+      doomsdayTriggered = true;
+      playSiren();
+
+      const banner = document.getElementById('doomsday-banner');
+      if (banner) banner.style.display = 'block';
+
+      // 1. Instant full salvo of all operational silos and submarines
+      const operationalSilos = friendlyBases.filter(b => b.type === 'silo' && !b.destroyed);
+      operationalSilos.forEach((s, idx) => {
+        setTimeout(() => {
+          const icbm = icbmPool.find(m => !m.active);
+          if (icbm) {
+            icbm.active = true;
+            icbm.isSubmarine = false;
+            const targetAsset = enemyAssets[idx % enemyAssets.length];
+            icbm.targetPos.copy(targetAsset.absPos);
+            icbm.state = 'IGNITING';
+            icbm.progress = 0;
+            icbm.startPos.copy(s.pos);
+            icbm.group.position.copy(s.pos);
+            icbm.group.visible = true;
+            triggerExplosion(s.pos, false, 0x00f0ff);
+          }
+        }, idx * 250);
+      });
+
+      const operationalSubs = playerSubs.filter(sub => !sub.destroyed);
+      operationalSubs.forEach((sub, idx) => {
+        setTimeout(() => {
+          const icbm = icbmPool.find(m => !m.active);
+          if (icbm) {
+            icbm.active = true;
+            icbm.isSubmarine = true;
+            const targetAsset = enemyAssets[(idx + 4) % enemyAssets.length];
+            icbm.targetPos.copy(targetAsset.absPos);
+            icbm.state = 'IGNITING';
+            icbm.progress = 0;
+            icbm.startPos.copy(sub.pos);
+            icbm.group.position.copy(sub.pos);
+            icbm.group.visible = true;
+            triggerExplosion(sub.pos, false, 0x0284c7);
+          }
+        }, 1200 + idx * 300);
+      });
+
+      if (operationalSilos.length === 0 && operationalSubs.length === 0) {
+        showStatus('WARNING: DOOMSDAY SALVO ABORTED - ALL SILOS & SUBS DESTROYED');
+      }
+
+      // 2. Overdrive Beam Guns & Cyber Shield if operational
+      if (!isSpearDestroyed) {
+        isSpearActive = true;
+        spearTimer = 12.0;
+        cyberShieldMat.opacity = 0.65;
+      }
+
+      setTimeout(() => {
+        if (banner) banner.style.display = 'none';
+        doomsdayTriggered = false;
+      }, 7000);
+    }
+
+    // MASS ATTACK WAVE ENGINE (16-24 simultaneous warheads)
+    function triggerMassAttackWave() {
+      playSiren();
+      showStatus('MASS ATTACK DETECTED: 18 HYPERSONIC WARHEADS INBOUND');
+      combatPhase = 'WAVE_ACTIVE';
+
+      for (let i = 0; i < 18; i++) {
+        setTimeout(() => {
+          const w = warheadPool.find(item => !item.active);
+          if (w) {
+            const startX = (Math.random() - 0.5) * 320;
+            const startZ = (Math.random() - 0.5) * 320;
+            const startY = 360 + Math.random() * 80;
+            const targetX = (Math.random() - 0.5) * 160;
+            const targetZ = (Math.random() - 0.5) * 160;
+
+            w.active = true;
+            w.hijacked = false;
+            w.life = 20;
+            w.isMassAttack = true;
+            w.group.position.set(startX, startY, startZ);
+            w.targetPos.set(targetX, 0, targetZ);
+            const dir = new THREE.Vector3(targetX - startX, -startY, targetZ - startZ).normalize();
+            w.vel.copy(dir).multiplyScalar(75);
+            w.group.visible = true;
+            updateUI();
+          }
+        }, i * 150);
+      }
+
+      // Check Master V7 Auto Doomsday Trigger
+      setTimeout(() => {
+        executeMasterV7Doomsday();
+      }, 1000);
+    }
+
+    // EVENT LISTENERS & HUD INTERACTIONS
+    document.getElementById('download-html-btn').addEventListener('click', () => {
+      const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const blob = new Blob([html], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    document.getElementById('sub-strike-btn').addEventListener('click', () => launchPinpointStrike(true, false));
+    document.getElementById('drone-strike-btn').addEventListener('click', () => launchPinpointStrike(false, true));
+    document.getElementById('silo-strike-btn').addEventListener('click', () => launchPinpointStrike(false, false));
+    document.getElementById('intel-sub-btn').addEventListener('click', () => launchPinpointStrike(true, false));
+    document.getElementById('intel-icbm-btn').addEventListener('click', () => launchPinpointStrike(false, false));
+    document.getElementById('mass-attack-btn').addEventListener('click', triggerMassAttackWave);
+    document.getElementById('doomsday-manual-btn').addEventListener('click', executeMasterV7Doomsday);
+
+    document.getElementById('spear-btn').addEventListener('click', () => {
+      if (isSpearDestroyed) {
+        showStatus('ERROR: CYBER SPEAR EW STATION DESTROYED BY ENEMY FIRE');
+        return;
+      }
+      isSpearActive = true;
+      spearTimer = 8.0;
+      cyberShieldMat.opacity = 0.7;
+      initAudio();
+      playTone(950, 0.5, 'sawtooth', 300);
+      showStatus('CYBER SHIELD ACTIVE: INBOUND WARHEAD GUIDANCE COMPROMISED');
+    });
+
+    document.getElementById('jamming-btn').addEventListener('click', () => {
+      if (isJammingActive) return;
+      isJammingActive = true;
+      initAudio();
+      playTone(110, 0.6, 'square');
+      showStatus('ELECTRONIC WARFARE (EW) JAMMING ENGAGED');
+      setTimeout(() => { isJammingActive = false; }, 8000);
+    });
+
+    document.getElementById('auto-defense-btn').addEventListener('click', () => {
+      autoDefense = !autoDefense;
+      document.getElementById('auto-defense-btn').classList.toggle('btn-active', autoDefense);
+      document.getElementById('auto-defense-btn').innerText = '🛡️ AUTO-DEFENSE: ' + (autoDefense ? 'ON' : 'OFF');
+    });
+
+    document.getElementById('audio-toggle-btn').addEventListener('click', () => {
+      isMuted = !isMuted;
+      document.getElementById('audio-toggle-btn').innerText = isMuted ? '🔇' : '🔊';
+    });
+
+    // Quick Camera Snaps using smooth view transitions
+    document.getElementById('cam-hq').addEventListener('click', () => setCameraView(0, 15, 0, 0, 60, 95));
+    document.getElementById('cam-metropolis').addEventListener('click', () => setCameraView(0, 30, 0, 120, 110, 150));
+    document.getElementById('cam-silos').addEventListener('click', () => setCameraView(0, 5, 0, -35, 45, -45));
+    document.getElementById('cam-airbase').addEventListener('click', () => setCameraView(95, 5, -85, 95, 32, -35));
+    document.getElementById('cam-subs').addEventListener('click', () => setCameraView(225, 0, -165, 225, 35, -110));
+    document.getElementById('cam-enemy').addEventListener('click', () => setCameraView(720, 30, -720, 620, 110, -620));
+    document.getElementById('cam-street').addEventListener('click', () => setCameraView(0, 3, 0, 0, 4, 80));
+    document.getElementById('cam-reset').addEventListener('click', () => setCameraView(0, 15, 0, 0, 260, 300));
+
+    // Drawer toggles
+    document.getElementById('open-intel-btn').addEventListener('click', () => {
+      document.getElementById('intel-drawer').style.display = 'block';
+    });
+    document.getElementById('close-intel-btn').addEventListener('click', () => {
+      document.getElementById('intel-drawer').style.display = 'none';
+    });
+    document.getElementById('open-defense-btn').addEventListener('click', () => {
+      document.getElementById('defense-drawer').style.display = 'block';
+    });
+    document.getElementById('close-defense-btn').addEventListener('click', () => {
+      document.getElementById('defense-drawer').style.display = 'none';
+    });
+    document.getElementById('intel-drone-btn').addEventListener('click', () => launchPinpointStrike(false, true));
+
+    // Populate 25-system intel select options
+    const intelSelect = document.getElementById('intel-system-select');
+    function populateIntelSelect(tierFilter = 'ALL') {
+      if (!intelSelect) return;
+      intelSelect.innerHTML = '';
+      enemyAssets.forEach(a => {
+        if (tierFilter !== 'ALL' && a.tier !== tierFilter) return;
+        const opt = document.createElement('option');
+        opt.value = a.id;
+        opt.innerText = '[' + a.tier + '] ' + a.name + ' (' + a.threatLevel + ')';
+        intelSelect.appendChild(opt);
+      });
+    }
+    populateIntelSelect('ALL');
+
+    function selectEnemySystem(asset) {
+      if (!asset) return;
+      pinnedTargetCoords.copy(asset.absPos);
+      reticleGroup.position.copy(asset.absPos).add(new THREE.Vector3(0, 0.5, 0));
+      document.getElementById('intel-name').innerText = asset.name;
+      document.getElementById('intel-badge').innerText = asset.category;
+      document.getElementById('intel-threat').innerText = asset.threatLevel;
+      document.getElementById('intel-prob').innerText = asset.interceptionProb + '% [ACTIVE]';
+      document.getElementById('intel-prob-bar').style.width = asset.interceptionProb + '%';
+      document.getElementById('intel-coords').innerText = asset.coords;
+      document.getElementById('intel-radar').innerText = asset.radarCoverage + 'km';
+      document.getElementById('intel-health').innerText = asset.health + '%';
+      document.getElementById('intel-briefing').innerText = asset.briefing;
+      document.getElementById('intel-drawer').style.display = 'block';
+
+      document.getElementById('reticle-coords').innerText = 'X: ' + Math.round(asset.absPos.x) + ', Z: ' + Math.round(asset.absPos.z);
+      document.getElementById('reticle-range').innerText = Math.round(asset.absPos.distanceTo(new THREE.Vector3(0,0,0))) + ' km';
+      document.getElementById('reticle-tti').innerText = '4.2s';
+      if (intelSelect) intelSelect.value = asset.id;
+    }
+
+    if (intelSelect) {
+      intelSelect.addEventListener('change', e => {
+        const id = parseInt(e.target.value);
+        const a = enemyAssets.find(item => item.id === id);
+        if (a) selectEnemySystem(a);
+      });
+    }
+
+    document.querySelectorAll('.tier-tab-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        document.querySelectorAll('.tier-tab-btn').forEach(b => b.classList.remove('btn-active'));
+        btn.classList.add('btn-active');
+        populateIntelSelect(btn.getAttribute('data-tier'));
+      });
+    });
+
+    // RAYCASTING FOR TARGETING & RETICLE PLACEMENT
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    window.addEventListener('click', e => {
+      if (e.target.closest('.hud-panel') || e.target.closest('.drawer') || e.target.closest('.reticle-hud')) return;
+      initAudio();
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      // Check click on enemy asset
+      const enemyHits = raycaster.intersectObjects(enemyGroup.children, true);
+      if (enemyHits.length > 0) {
+        let hit = enemyHits[0].object;
+        while (hit && !hit.userData?.category && hit.parent) hit = hit.parent;
+        if (hit?.userData?.category) {
+          selectEnemySystem(hit.userData);
+          return;
+        }
+      }
+
+      // Check click on ground / ocean plane
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const groundPt = new THREE.Vector3();
+      raycaster.ray.intersectPlane(plane, groundPt);
+      if (groundPt) {
+        pinnedTargetCoords.copy(groundPt);
+        reticleGroup.position.copy(groundPt).add(new THREE.Vector3(0, 0.2, 0));
+        document.getElementById('reticle-coords').innerText = 'X: ' + Math.round(groundPt.x) + ', Z: ' + Math.round(groundPt.z);
+        const dist = Math.round(groundPt.distanceTo(new THREE.Vector3(0, 0, 0)));
+        document.getElementById('reticle-range').innerText = dist + ' km';
+        document.getElementById('reticle-tti').innerText = (dist * 0.035).toFixed(1) + 's';
+        playTone(850, 0.15, 'sine');
+      }
+    });
+
+    // SIMULATION ANIMATION LOOP
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.1);
+
+      // OrbitControls update
+      if (orbitControls) orbitControls.update();
+
+      // Rotate Primary S-25 Radar & Auxiliary Phased Dishes if operational
+      if (!s25RadarDestroyed && radarDish) radarDish.rotation.y += dt * 3.5;
+      auxRadars.forEach((a, idx) => {
+        if (!a.destroyed && a.dish) {
+          a.dish.rotation.y += dt * (idx === 0 ? 2.5 : -2.8);
+        }
+      });
+      if (!isSpearDestroyed && spearDish) spearDish.rotation.z += dt * 3.5;
+
+      // Pulse Beacon Lights & Reticle
+      reticleRing.rotation.z += dt * 1.5;
+      reticleCore.rotation.z -= dt * 2.0;
+
+      // Tall building warning beacons strobe
+      const beaconTime = clock.getElapsedTime();
+      const beaconAlpha = (Math.sin(beaconTime * 6.0) > 0) ? 1.0 : 0.2;
+      beaconLightMat.color.setRGB(beaconAlpha, 0, beaconAlpha * 0.2);
+
+      // Drifting clouds
+      cloudsGroup.children.forEach(c => {
+        c.position.x += dt * 5.0;
+        if (c.position.x > 700) c.position.x = -700;
+      });
+
+      // Cyber shield dissipation
+      if (isSpearActive) {
+        spearTimer -= dt;
+        cyberShieldMesh.rotation.y += dt * 0.8;
+        if (spearTimer <= 0) {
+          isSpearActive = false;
+          cyberShieldMat.opacity = 0.0;
+        }
+      }
+
+      // Cooling Beam Weapons & Rotating Crystal Coils
+      beamGunTurrets.forEach(t => {
+        if (t.coolingTimer > 0) t.coolingTimer -= dt;
+        if (t.ring) t.ring.rotation.z += dt * 4.0;
+        if (t.crystal) t.crystal.rotation.y += dt * 3.0;
+      });
+      if (beamHeat > 0) beamHeat = Math.max(0, beamHeat - dt * 14);
+
+      // Dynamic Silo Sliding Blast Doors Actuation
+      friendlyBases.filter(b => b.type === 'silo').forEach(b => {
+        const isLaunching = icbmPool.some(m => m.active && m.state === 'IGNITING' && m.startPos.distanceTo(b.pos) < 6.0);
+        const targetOpen = isLaunching ? 2.4 : 0.0;
+        b.hatchOpen = THREE.MathUtils.lerp(b.hatchOpen || 0, targetOpen, dt * 6.0);
+        if (b.doorLeft) b.doorLeft.position.z = -1.1 - b.hatchOpen;
+        if (b.doorRight) b.doorRight.position.z = 1.1 + b.hatchOpen;
+      });
+
+      // 12-Layer Defense Live Telemetry
+      const lSam = document.getElementById('layer-sam-status');
+      if (lSam) lSam.innerText = 'READY (' + samStock + '/' + maxSamStock + ')';
+      const lBeam = document.getElementById('layer-beam-status');
+      if (lBeam) lBeam.innerText = Math.round(beamHeat) + '% [' + (beamHeat >= 80 ? 'OVERHEAT' : 'READY') + ']';
+      const lSpear = document.getElementById('layer-spear-status');
+      if (lSpear) lSpear.innerText = isSpearActive ? 'ACTIVE (DEFLECTING)' : 'STANDBY';
+      const lSub = document.getElementById('layer-sub-status');
+      if (lSub) lSub.innerText = subStock + '/6 READY';
+      const lDrone = document.getElementById('layer-drone-status');
+      if (lDrone) lDrone.innerText = reconDrone.position.distanceTo(droneTargetPos) < 10 ? 'ON TARGET' : 'IN TRANSIT';
+
+      // Recon Drone Motion
+      reconDrone.position.lerp(droneTargetPos, dt * 1.8);
+
+      // Rescue Drone Metropolis Repair
+      if (cityHealth > 0 && cityHealth < 100) {
+        cityHealth = Math.min(100, cityHealth + dt * 0.5);
+        updateUI();
+      }
+
+      // COMBAT WAVE TIMERS
+      if (combatPhase === 'PREPARATION') {
+        waveCountdown -= dt;
+        if (waveCountdown <= 0) {
+          combatPhase = 'WAVE_ACTIVE';
+          warheadsSpawnedInWave = 0;
+          spawnTimer = 0.5;
+          playSiren();
+          showStatus('HOSTILE MISSILE SATURATION COMMENCING');
+        }
+        updateUI();
+      } else if (combatPhase === 'WAVE_ACTIVE') {
+        const curWave = waveConfigs[currentWaveIdx];
+        spawnTimer -= dt;
+        if (spawnTimer <= 0 && warheadsSpawnedInWave < curWave.count) {
+          const w = warheadPool.find(item => !item.active);
+          if (w) {
+            const startX = (Math.random() - 0.5) * 260;
+            const startZ = (Math.random() - 0.5) * 260;
+            const startY = 340 + Math.random() * 60;
+            const targetX = (Math.random() - 0.5) * 140;
+            const targetZ = (Math.random() - 0.5) * 140;
+
+            w.active = true;
+            w.hijacked = false;
+            w.life = 20;
+            w.isMassAttack = false;
+            w.group.position.set(startX, startY, startZ);
+            w.targetPos.set(targetX, 0, targetZ);
+            const dir = new THREE.Vector3(targetX - startX, -startY, targetZ - startZ).normalize();
+            w.vel.copy(dir).multiplyScalar(curWave.speed);
+            w.group.visible = true;
+
+            warheadsSpawnedInWave++;
+            spawnTimer = 1.4 + Math.random() * 1.2;
+          }
+        }
+
+        // Wave End Check
+        const activeWarheads = warheadPool.filter(w => w.active).length;
+        if (warheadsSpawnedInWave >= curWave.count && activeWarheads === 0) {
+          if (currentWaveIdx < waveConfigs.length - 1) {
+            currentWaveIdx++;
+            combatPhase = 'PREPARATION';
+            waveCountdown = 25.0;
+            samStock = Math.min(maxSamStock, samStock + 12);
+            subStock = Math.min(6, subStock + 3);
+            showStatus('SUPERPOWER WAVE NEUTRALIZED: PREPARING DEFENSES');
+          } else {
+            combatPhase = 'VICTORY';
+            document.getElementById('modal-title').innerText = 'METROPOLIS SAVED - VICTORY';
+            document.getElementById('modal-desc').innerText = 'All five superpower ballistic offensives countered.';
+            document.getElementById('modal-final-score').innerText = score;
+            document.getElementById('modal-final-intercepts').innerText = intercepts;
+            document.getElementById('end-modal').style.display = 'flex';
+          }
+          updateUI();
+        }
+      }
+
+      // AUTO-DEFENSE RADAR INTERCEPTION
+      if (autoDefense && Math.random() < 0.08) {
+        const inRangeWarhead = warheadPool.find(w => w.active && !w.hijacked && w.group.position.y < 240);
+        if (inRangeWarhead) {
+          if (beamHeat < 65 && Math.random() < 0.5) {
+            fireDirectedBeam(inRangeWarhead.group.position);
+          } else if (samStock > 0) {
+            fireSAM(inRangeWarhead.group.position);
+          }
+        }
+      }
+
+      // WARHEADS FLIGHT, CYBER DEFLECTION & 3D PHYSICAL COLLISION ENGINE
+      warheadPool.forEach(w => {
+        if (!w.active) return;
+
+        // If Cyber Shield is active and warhead enters umbrella, deflect to ocean
+        if (isSpearActive && !w.hijacked && w.group.position.y < 110) {
+          w.hijacked = true;
+          const oceanDump = new THREE.Vector3(260 + Math.random() * 80, 0, 260 + Math.random() * 80);
+          const dir = oceanDump.clone().sub(w.group.position).normalize();
+          w.vel.copy(dir).multiplyScalar(w.vel.length());
+          triggerExplosion(w.group.position, false, 0xa855f7);
+          showStatus('CYBER SHIELD COMPROMISED WARHEAD: DEFLECTED TO OCEAN');
+        }
+
+        w.group.position.addScaledVector(w.vel, dt);
+        w.life -= dt;
+        const curPos = w.group.position;
+
+        // 1. COLLISION DETECTION: MID-AIR DIRECT HIT ON METROPOLIS SKYSCRAPERS
+        if (curPos.x >= -190 && curPos.x <= 190 && curPos.z >= -190 && curPos.z <= 190) {
+          for (let bi = 0; bi < cityBuildings.length; bi++) {
+            const b = cityBuildings[bi];
+            if (b.destroyed) continue;
+            if (curPos.y > b.sy) continue;
+            const halfX = b.sx * 0.55;
+            const halfZ = b.sz * 0.55;
+            if (Math.abs(curPos.x - b.x) <= halfX && Math.abs(curPos.z - b.z) <= halfZ) {
+              // Direct mid-air projectile impact on skyscraper!
+              destroyBuilding(b, curPos.clone());
+              triggerExplosion(curPos, true, 0xf43f5e);
+              w.active = false;
+              w.group.visible = false;
+              break;
+            }
+          }
+        }
+
+        // 2. COLLISION DETECTION: DIRECT HIT ON PLAYER DEFENSE LAUNCH SITES (Hitboxes)
+        if (w.active && curPos.y <= 16.0) {
+          if (checkPlayerDefenseHit(curPos)) {
+            triggerExplosion(curPos, true, 0xf43f5e);
+            w.active = false;
+            w.group.visible = false;
+          }
+        }
+
+        // 3. COLLISION DETECTION: GROUND DETONATION & COLLATERAL RADIUS DAMAGE
+        if (w.active && (curPos.y <= 1.0 || w.life <= 0)) {
+          triggerExplosion(curPos, true, 0xf43f5e);
+          w.active = false;
+          w.group.visible = false;
+
+          if (!w.hijacked) {
+            checkRadiusDamage(curPos, 28.0);
+            cityHealth = Math.max(0, cityHealth - (8 + Math.random() * 5));
+            if (cityHealth <= 0 && combatPhase !== 'DEFEAT') {
+              combatPhase = 'DEFEAT';
+              document.getElementById('modal-title').innerText = 'METROPOLIS OBLITERATED';
+              document.getElementById('modal-desc').innerText = 'Hostile saturation breached the air defense perimeter.';
+              document.getElementById('modal-final-score').innerText = score;
+              document.getElementById('modal-final-intercepts').innerText = intercepts;
+              document.getElementById('end-modal').style.display = 'flex';
+            }
+          }
+          updateUI();
+        }
+      });
+
+      // SAM INTERCEPTORS
+      samPool.forEach(sam => {
+        if (!sam.active) return;
+        const dir = sam.dest.clone().sub(sam.group.position);
+        const dist = dir.length();
+        if (dist < 5.0 || sam.life <= 0) {
+          triggerExplosion(sam.group.position, false, 0x00f0ff);
+          sam.active = false;
+          sam.group.visible = false;
+
+          warheadPool.forEach(w => {
+            if (w.active && w.group.position.distanceTo(sam.group.position) < 26.0) {
+              triggerExplosion(w.group.position, false, 0x10b981);
+              w.active = false;
+              w.group.visible = false;
+              score += 250;
+              intercepts++;
+              showStatus('KINETIC INTERCEPTION CONFIRMED');
+            }
+          });
+          updateUI();
+          return;
+        }
+        dir.normalize();
+        sam.group.position.addScaledVector(dir, sam.speed * dt);
+        sam.group.lookAt(sam.dest);
+        sam.life -= dt;
+      });
+
+      // BEAMS DECAY
+      beamPool.forEach(b => {
+        if (!b.active) return;
+        b.life -= dt;
+        if (b.life <= 0) {
+          b.active = false;
+          b.mesh.visible = false;
+        }
+      });
+
+      // ICBM & SUBMARINE SLBM BALLISTIC TRAJECTORIES (EQUAL ENEMY DESTRUCTION MECHANICS)
+      icbmPool.forEach(m => {
+        if (!m.active) return;
+        m.progress += dt;
+
+        if (m.state === 'IGNITING') {
+          m.group.position.y += 24 * dt;
+          if (m.progress >= 1.4) m.state = 'TRANSIT';
+        } else if (m.state === 'TRANSIT') {
+          const t = Math.min(1.0, (m.progress - 1.4) / 3.8);
+          const curPos = new THREE.Vector3().lerpVectors(m.startPos, m.targetPos, t);
+          curPos.y += Math.sin(t * Math.PI) * 260;
+          m.group.position.copy(curPos);
+
+          const nextPos = new THREE.Vector3().lerpVectors(m.startPos, m.targetPos, Math.min(1.0, t + 0.05));
+          nextPos.y += Math.sin((t + 0.05) * Math.PI) * 260;
+          m.group.lookAt(nextPos);
+
+          if (t >= 1.0) {
+            triggerExplosion(m.targetPos, true, 0xffaa00);
+            m.active = false;
+            m.group.visible = false;
+
+            // Check if any enemy asset is within blast radius of impact
+            let enemyStruck = false;
+            enemyAssets.forEach(asset => {
+              if (!asset.destroyed && asset.absPos.distanceTo(m.targetPos) < 65.0) {
+                destroyEnemyAsset(asset);
+                enemyStruck = true;
+              }
+            });
+
+            // Also check collateral radius damage on any structures near target
+            checkRadiusDamage(m.targetPos, 45.0);
+
+            if (!enemyStruck) {
+              score += 600;
+              showStatus('PINPOINT KINETIC IMPACT CONFIRMED AT SECTOR (' + Math.round(m.targetPos.x) + ', ' + Math.round(m.targetPos.z) + ')');
+            }
+            updateUI();
+          }
+        }
+      });
+
+      // LINGERING BLACK SMOKE & BURNING FIRE EMITTERS PHYSICS
+      for (let i = activeSmokeEmitters.length - 1; i >= 0; i--) {
+        const em = activeSmokeEmitters[i];
+        em.elapsed += dt;
+        em.timer += dt;
+        if (em.timer >= em.interval) {
+          em.timer = 0;
+          const sm = smokePool.find(s => !s.active);
+          if (sm) {
+            sm.active = true;
+            sm.mesh.position.set(
+              em.pos.x + (Math.random() - 0.5) * 5.0,
+              em.pos.y + Math.random() * 2.5,
+              em.pos.z + (Math.random() - 0.5) * 5.0
+            );
+            sm.vel.set((Math.random() - 0.5) * 3.5, 9 + Math.random() * 14, (Math.random() - 0.5) * 3.5);
+            sm.scale = 1.0 + Math.random() * 0.8;
+            sm.mesh.scale.set(sm.scale, sm.scale, sm.scale);
+            sm.life = 0;
+            sm.maxLife = 3.6 + Math.random() * 1.6;
+            sm.mesh.material.opacity = 0.75;
+            sm.mesh.visible = true;
+          }
+          if (em.isHeavy && Math.random() < 0.65) {
+            const fm = firePool.find(f => !f.active);
+            if (fm) {
+              fm.active = true;
+              fm.mesh.position.set(
+                em.pos.x + (Math.random() - 0.5) * 4.0,
+                em.pos.y + Math.random() * 2.0,
+                em.pos.z + (Math.random() - 0.5) * 4.0
+              );
+              fm.vel.set((Math.random() - 0.5) * 2.5, 6 + Math.random() * 9, (Math.random() - 0.5) * 2.5);
+              fm.scale = 0.9 + Math.random() * 0.7;
+              fm.mesh.scale.set(fm.scale, fm.scale, fm.scale);
+              fm.life = 0;
+              fm.maxLife = 1.0 + Math.random() * 0.6;
+              fm.mesh.material.opacity = 0.9;
+              fm.mesh.visible = true;
+            }
+          }
+        }
+        if (em.elapsed >= em.duration) {
+          activeSmokeEmitters.splice(i, 1);
+        }
+      }
+
+      smokePool.forEach(sm => {
+        if (!sm.active) return;
+        sm.life += dt;
+        sm.mesh.position.addScaledVector(sm.vel, dt);
+        sm.scale += dt * 2.6;
+        sm.mesh.scale.set(sm.scale, sm.scale, sm.scale);
+        sm.mesh.material.opacity = Math.max(0, 0.75 * (1 - sm.life / sm.maxLife));
+        if (sm.life >= sm.maxLife) {
+          sm.active = false;
+          sm.mesh.visible = false;
+        }
+      });
+
+      firePool.forEach(fm => {
+        if (!fm.active) return;
+        fm.life += dt;
+        fm.mesh.position.addScaledVector(fm.vel, dt);
+        fm.scale = Math.max(0.1, fm.scale - dt * 0.85);
+        fm.mesh.scale.set(fm.scale, fm.scale, fm.scale);
+        fm.mesh.material.opacity = Math.max(0, 0.9 * (1 - fm.life / fm.maxLife));
+        if (fm.life >= fm.maxLife) {
+          fm.active = false;
+          fm.mesh.visible = false;
+        }
+      });
+
+      // DEBRIS PHYSICS
+      debrisPool.forEach(d => {
+        if (!d.active) return;
+        d.vel.y -= 60 * dt;
+        d.mesh.position.addScaledVector(d.vel, dt);
+        d.mesh.rotation.x += d.rotVel.x * dt;
+        d.mesh.rotation.y += d.rotVel.y * dt;
+
+        if (d.mesh.position.y <= 0.6) {
+          d.mesh.position.y = 0.6;
+          d.vel.y = -d.vel.y * 0.3;
+          d.vel.x *= 0.7;
+          d.vel.z *= 0.7;
+        }
+
+        d.life -= dt;
+        if (d.life <= 0) {
+          d.active = false;
+          d.mesh.visible = false;
+        }
+      });
+
+      // SHOCKWAVES
+      shockwavePool.forEach(s => {
+        if (!s.active) return;
+        s.scale += dt * 45;
+        s.opacity -= dt * 1.2;
+        s.mesh.scale.set(s.scale, s.scale, s.scale);
+        s.mesh.material.opacity = Math.max(0, s.opacity);
+        if (s.scale >= 36 || s.opacity <= 0) {
+          s.active = false;
+          s.mesh.visible = false;
+        }
+      });
+
+      if (screenShake > 0) {
+        camera.position.x += (Math.random() - 0.5) * screenShake * 0.22;
+        camera.position.y += (Math.random() - 0.5) * screenShake * 0.22;
+        screenShake = Math.max(0, screenShake - dt * 26);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    document.getElementById('modal-restart-btn').addEventListener('click', () => window.location.reload());
+
+    updateCameraPos();
+    updateUI();
+    animate();
+  </script>
+</body>
+</html>

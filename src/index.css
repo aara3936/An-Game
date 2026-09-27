@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+/* Subtle, smooth entrance animations for HUD panels, drawers, and banners */
+
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideDownFade {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawerSlideUpCenter {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 18px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes drawerSlideDownCenter {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -16px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes modalPopFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.93) translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes bannerDropFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -14px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* DEFCON Alert Badge Soft Breathing Keyframes */
+@keyframes defconBreatheCyan {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(6, 182, 212, 0.4), inset 0 0 4px rgba(6, 182, 212, 0.25);
+    opacity: 0.92;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.85), inset 0 0 8px rgba(6, 182, 212, 0.5);
+    opacity: 1;
+    transform: scale(1.035);
+  }
+}
+
+@keyframes defconBreatheAmber {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.45), inset 0 0 5px rgba(245, 158, 11, 0.3);
+    opacity: 0.94;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.95), inset 0 0 9px rgba(245, 158, 11, 0.55);
+    opacity: 1;
+    transform: scale(1.045);
+  }
+}
+
+@keyframes defconBreatheRed {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6), inset 0 0 6px rgba(239, 68, 68, 0.4);
+    opacity: 0.92;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(239, 68, 68, 1), inset 0 0 12px rgba(239, 68, 68, 0.65);
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* Animation Utility Classes */
+.animate-slide-up-fade {
+  animation: slideUpFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-down-fade {
+  animation: slideDownFade 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-drawer-up-center {
+  animation: drawerSlideUpCenter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-drawer-down-center {
+  animation: drawerSlideDownCenter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-modal-pop {
+  animation: modalPopFade 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-banner-drop {
+  animation: bannerDropFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* DEFCON Badge Breathing Utility Classes */
+.defcon-badge-breathe-cyan {
+  animation: defconBreatheCyan 2.8s ease-in-out infinite;
+}
+
+.defcon-badge-breathe-amber {
+  animation: defconBreatheAmber 2.1s ease-in-out infinite;
+}
+
+.defcon-badge-breathe-red {
+  animation: defconBreatheRed 1.35s ease-in-out infinite;
+}
