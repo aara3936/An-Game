@@ -3,7 +3,7 @@ name = "warfare_simulator_engine"
 version = "0.1.0"
 edition = "2021"
 authors = ["Senior Systems Architect & Rust Game Engine Engineer <engine@strategic-command.internal>"]
-description = "Production-Grade High-Fidelity 3D Warfare Simulator & AI Engine with Adaptive Hardware Profiling, 7-State Tactical AI Brain, WGSL Shaders, Procedural Web Audio, and Multi-Pin Target Lock Bridge"
+description = "Production-Grade Anti-Ballistic & Retaliatory Engine with Throne Thriller 1 Global Radar, VS-90 Protocol Salvo Retaliation, Intercept S-5 Mach 15 Predictive Proportional Navigation, and 120 FPS Deterministic Simulation Loop"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
