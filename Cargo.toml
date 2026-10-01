@@ -49,6 +49,13 @@ features = [
   "console",
 ]
 
+[package.metadata.android]
+package = "com.strategicdefense.warfare"
+apk_label = "Warfare Simulator 3D"
+target_sdk_version = 34
+min_sdk_version = 26
+build_targets = ["aarch64-linux-android"]
+
 [profile.release]
 opt-level = "s"       # Optimize for binary throughput and minimal Wasm size
 lto = true            # Link-Time Optimization across all crates

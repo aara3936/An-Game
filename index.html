@@ -672,7 +672,9 @@
       <button class="rust-tab-btn btn" data-file="audio" style="font-size: 7.5px; padding: 3px 6px;">src/audio_system.rs (Audio Bridge)</button>
       <button class="rust-tab-btn btn" data-file="profiler" style="font-size: 7.5px; padding: 3px 6px;">src/profiler.rs (120 FPS Profiler)</button>
       <button class="rust-tab-btn btn" data-file="main" style="font-size: 7.5px; padding: 3px 6px;">src/main.rs (Native Runner)</button>
-      <button class="rust-tab-btn btn" data-file="android" style="font-size: 7.5px; padding: 3px 6px;">src/android.rs (Android APK)</button>
+      <button class="rust-tab-btn btn" data-file="android" style="font-size: 7.5px; padding: 3px 6px;">src/android.rs</button>
+      <button class="rust-tab-btn btn" data-file="manifest" style="font-size: 7.5px; padding: 3px 6px;">AndroidManifest.xml</button>
+      <button class="rust-tab-btn btn" data-file="workflow" style="font-size: 7.5px; padding: 3px 6px;">.github/workflows/build-apk.yml</button>
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -6216,7 +6218,125 @@ pub extern "C" fn android_main(_app: *mut std::ffi::c_void) {
     loop {
         sim.tick(1.0 / 120.0);
     }
-}`
+}`,
+
+      manifest: `<?xml version="1.0" encoding="utf-8"?>
+<!-- Production Android Native APK Manifest for Strategic Warfare Simulation Engine -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.strategicdefense.warfare"
+    android:versionCode="1"
+    android:versionName="1.0.0">
+
+    <uses-feature android:glEsVersion="0x00030002" android:required="true" />
+    <uses-feature android:name="android.hardware.vulkan.version" android:version="0x401000" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen.multitouch" android:required="true" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:label="Warfare Simulator 3D"
+        android:hasCode="false"
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+        android:resizeableActivity="false">
+
+        <activity
+            android:name="android.app.NativeActivity"
+            android:label="Warfare Simulator 3D"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|density"
+            android:screenOrientation="sensorLandscape"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="warfare_simulator_engine" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>`,
+
+      workflow: `name: Build Native Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-apk:
+    name: Compile Rust/Bevy Native Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Android SDK & NDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+
+      - name: Install Android Build Tools & NDK
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "ndk;26.1.10909125"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/26.1.10909125" >> $GITHUB_ENV
+          echo "NDK_HOME=$ANDROID_HOME/ndk/26.1.10909125" >> $GITHUB_ENV
+
+      - name: Set up Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Rust Dependency Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: \${{ runner.os }}-cargo-apk
+
+      - name: Install cargo-apk
+        run: |
+          cargo install cargo-apk --locked
+
+      - name: Compile Native Android APK (Release)
+        env:
+          ANDROID_HOME: \${{ env.ANDROID_HOME }}
+          ANDROID_NDK_ROOT: \${{ env.ANDROID_NDK_ROOT }}
+          NDK_HOME: \${{ env.NDK_HOME }}
+        run: |
+          cargo apk build --release --target aarch64-linux-android
+
+      - name: Locate and Stage Generated APK Artifacts
+        run: |
+          mkdir -p build-output/apk
+          find target -name "*.apk" -type f -exec cp -v {} build-output/apk/ \\;
+          echo "Generated APK files in build-output/apk/:"
+          ls -lh build-output/apk/
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WarfareSimulator3D-Android-aarch64-Release
+          path: build-output/apk/*.apk
+          if-no-files-found: error
+          retention-days: 30`
     };
 
     function showRustFile(fileKey) {
@@ -6236,7 +6356,9 @@ pub extern "C" fn android_main(_app: *mut std::ffi::c_void) {
           audio: 'src/audio_system.rs (Procedural Web Audio Bridge)',
           profiler: 'src/profiler.rs (120 FPS Adaptive Profiler)',
           main: 'src/main.rs (Native 120 FPS Runner)',
-          android: 'src/android.rs (Android AARCH64 Native Activity)'
+          android: 'src/android.rs (Android AARCH64 Native Activity)',
+          manifest: 'android/AndroidManifest.xml (Android Native Manifest)',
+          workflow: '.github/workflows/build-apk.yml (GitHub Actions APK Pipeline)'
         };
         rustFileLabel.innerText = names[fileKey] || fileKey;
       }
