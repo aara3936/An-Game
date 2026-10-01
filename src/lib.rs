@@ -2,12 +2,14 @@
 //! 120 FPS Deterministic Simulation Loop • Throne Thriller 1 Early Warning Radar • VS-90 Retaliation • Intercept S-5 Mach 15
 
 pub mod ai_brain;
+pub mod android;
 pub mod audio_system;
 pub mod components;
 pub mod physics_systems;
 pub mod profiler;
 pub mod radar_systems;
 pub mod shaders;
+pub mod weather;
 
 use ai_brain::{AIState, EnemyAIBrain};
 use audio_system::{SoundEffect, WasmAudioEngine};
@@ -27,6 +29,7 @@ use radar_systems::{
 };
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
+use weather::{WeatherCondition, WeatherState};
 
 /// Serialized Telemetry Snapshot exported each frame to WebGL / HUD viewport
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,6 +58,7 @@ pub struct EngineTelemetrySnapshot {
     pub vs90_countdown_seconds: f32,
     pub s5_ready_interceptors: u32,
     pub notifications: Vec<String>,
+    pub weather: WeatherState,
 }
 
 /// Core Production-Grade Game Engine Simulation State
@@ -74,6 +78,7 @@ pub struct WasmWarfareSimulation {
     radar: RadarTransform,
     profiler: DynamicHardwareProfiler,
     audio: WasmAudioEngine,
+    weather: WeatherState,
     score: u64,
     intercepts: u32,
     next_projectile_id: u32,
@@ -162,6 +167,7 @@ impl WasmWarfareSimulation {
             radar: RadarTransform::default(),
             profiler: DynamicHardwareProfiler::new(),
             audio: WasmAudioEngine::new(),
+            weather: WeatherState::new(),
             score: 0,
             intercepts: 0,
             next_projectile_id: 1,
@@ -177,6 +183,22 @@ impl WasmWarfareSimulation {
         self.profiler.record_frame_delta(clamped_dt);
         self.audio.update(clamped_dt);
         self.pin_manager.update(clamped_dt);
+
+        // Procedural Weather Progression
+        let prev_lightning = self.weather.lightning_flash_intensity;
+        if let Some(new_cond) = self.weather.update(clamped_dt) {
+            let notif = match new_cond {
+                WeatherCondition::ClearSkies => "☀️ METEOROLOGICAL ADVISORY: ATMOSPHERE CLEARING. RADAR VISIBILITY OPTIMAL.".to_string(),
+                WeatherCondition::RainShower => "🌧️ METEOROLOGICAL ALERT: RAIN SHOWER SQUALL INBOUND. WIND SPEED 35 KM/H.".to_string(),
+                WeatherCondition::HeavyThunderstorm => "⛈️ SEVERE WEATHER WARNING: HEAVY THUNDERSTORM & LIGHTNING ACTIVE. RADAR ATTENUATION SEVERE!".to_string(),
+            };
+            self.ai_brain.notifications.push(notif);
+        }
+
+        // Trigger procedural thunder audio when lightning flashes
+        if self.weather.lightning_flash_intensity >= 0.85 && prev_lightning < 0.85 {
+            self.audio.play_sound(SoundEffect::ThunderClap);
+        }
 
         self.physics_accumulator += clamped_dt;
         let pool_capacity = self.profiler.particle_pool_capacity;
@@ -402,6 +424,7 @@ impl WasmWarfareSimulation {
             vs90_countdown_seconds: self.vs90_protocol.countdown_timer,
             s5_ready_interceptors: self.intercept_s5_battery.ammo_count,
             notifications: self.ai_brain.notifications.drain(..).collect(),
+            weather: self.weather.clone(),
         };
 
         serde_json::to_string(&snapshot).unwrap_or_else(|_| "{}".to_string())
@@ -653,5 +676,36 @@ impl WasmWarfareSimulation {
 
     pub fn get_ai_state(&self) -> String {
         format!("{:?}", self.ai_brain.state).to_uppercase()
+    }
+
+    /// Set procedural weather state manually (0 = ClearSkies, 1 = RainShower, 2 = HeavyThunderstorm)
+    pub fn set_weather_condition(&mut self, condition_idx: u32) {
+        let condition = match condition_idx {
+            1 => WeatherCondition::RainShower,
+            2 => WeatherCondition::HeavyThunderstorm,
+            _ => WeatherCondition::ClearSkies,
+        };
+        self.weather.force_set_condition(condition);
+        let msg = match condition {
+            WeatherCondition::ClearSkies => "☀️ TACTICAL OVERRIDE: CLEAR SKIES ENGAGED",
+            WeatherCondition::RainShower => "🌧️ TACTICAL OVERRIDE: RAIN SHOWER SQUALL ENGAGED",
+            WeatherCondition::HeavyThunderstorm => "⛈️ TACTICAL OVERRIDE: HEAVY THUNDERSTORM & LIGHTNING ENGAGED",
+        };
+        self.ai_brain.notifications.push(msg.to_string());
+    }
+
+    /// Get current weather condition name
+    pub fn get_weather_condition(&self) -> String {
+        format!("{:?}", self.weather.current_condition).to_uppercase()
+    }
+
+    /// Get current precipitation intensity (0.0 to 1.0)
+    pub fn get_precipitation_intensity(&self) -> f32 {
+        self.weather.precipitation_intensity
+    }
+
+    /// Get current wind speed in km/h
+    pub fn get_wind_speed_kmh(&self) -> f32 {
+        self.weather.wind_speed_kmh
     }
 }

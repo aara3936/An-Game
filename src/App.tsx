@@ -7,6 +7,16 @@ import { buildSuperpowerBattlefield } from './sim/cityBuilder';
 import { createSatelliteWarMapTexture } from './sim/textures';
 import { neutralMediators, waveConfigs } from './sim/diplomacyData';
 import {
+  auth,
+  signInWithGoogle,
+  logOut,
+  saveSimulationRecord,
+  db,
+  type User,
+} from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import {
   Volume2,
   VolumeX,
   Download,
@@ -28,6 +38,10 @@ import {
   Handshake,
   Compass,
   Layers,
+  Trophy,
+  LogIn,
+  LogOut,
+  UserCheck,
 } from 'lucide-react';
 import type {
   EnemyAsset,
@@ -90,6 +104,67 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [isVictory, setIsVictory] = useState<boolean>(false);
+
+  // Firebase Auth & Cloud Firestore Leaderboard
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
+  const [leaderboardRecords, setLeaderboardRecords] = useState<any[]>([]);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState<boolean>(false);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
+
+  // Listen to Firebase Auth state
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setCurrentUser(u);
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch Firestore Leaderboard
+  const fetchLeaderboard = async () => {
+    setIsLoadingLeaderboard(true);
+    setShowLeaderboard(true);
+    try {
+      const q = query(collection(db, 'simulation_records'), orderBy('score', 'desc'), limit(15));
+      const snap = await getDocs(q);
+      const recs = snap.docs.map((d) => d.data());
+      setLeaderboardRecords(recs);
+    } catch (e) {
+      console.error('Error fetching leaderboard records:', e);
+    } finally {
+      setIsLoadingLeaderboard(false);
+    }
+  };
+
+  // Google Sign-In Handler
+  const handleGoogleSignIn = async () => {
+    setIsAuthLoading(true);
+    try {
+      await signInWithGoogle();
+      setCinematicBannerText('COMMANDER IDENTIFIED - CLOUD TELEMETRY ONLINE');
+      setTimeout(() => setCinematicBannerText(null), 3000);
+    } catch (e) {
+      console.error('Google Sign-in failed:', e);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  // Auto-persist battle record to Cloud Firestore on Victory or Defeat
+  useEffect(() => {
+    if ((isGameOver || isVictory) && currentUser) {
+      const battleId = `battle_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      saveSimulationRecord({
+        id: battleId,
+        score,
+        intercepts: interceptedCount,
+        cityIntegrity,
+        enemyIntegrity: 0,
+        weatherCondition: 'ClearSkies',
+        victory: isVictory,
+      }).catch((e) => console.error('Failed to auto-save battle record:', e));
+    }
+  }, [isGameOver, isVictory]);
 
   // Action Dispatch Refs
   const fireSAMRef = useRef<(pos?: THREE.Vector3) => void>(() => {});

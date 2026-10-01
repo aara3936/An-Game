@@ -19,6 +19,8 @@ pub enum SoundEffect {
     LaserBeamCIWS,
     RadarPing,
     TargetLockBeep,
+    ThunderClap,
+    RainAmbient,
 }
 
 /// Web Audio Bridge for WebAssembly execution
@@ -230,6 +232,37 @@ impl WasmAudioEngine {
                             let _ = gain.connect_with_audio_node(&ctx.destination());
                             let _ = osc.start();
                             let _ = osc.stop_with_when(now + 0.08);
+                        }
+                    }
+                }
+                SoundEffect::ThunderClap => {
+                    // Deep low-frequency reverberating thunder roll
+                    if let Ok(osc) = ctx.create_oscillator() {
+                        if let Ok(gain) = ctx.create_gain() {
+                            osc.set_type(OscillatorType::Sawtooth);
+                            let _ = osc.frequency().set_value_at_time(110.0, now);
+                            let _ = osc.frequency().exponential_ramp_to_value_at_time(28.0, now + 2.2);
+                            let _ = gain.gain().set_value_at_time(0.85, now);
+                            let _ = gain.gain().exponential_ramp_to_value_at_time(0.001, now + 2.4);
+                            let _ = osc.connect_with_audio_node(&gain);
+                            let _ = gain.connect_with_audio_node(&ctx.destination());
+                            let _ = osc.start();
+                            let _ = osc.stop_with_when(now + 2.45);
+                        }
+                    }
+                }
+                SoundEffect::RainAmbient => {
+                    // Atmospheric rushing rain noise texture simulation
+                    if let Ok(osc) = ctx.create_oscillator() {
+                        if let Ok(gain) = ctx.create_gain() {
+                            osc.set_type(OscillatorType::Triangle);
+                            let _ = osc.frequency().set_value_at_time(320.0, now);
+                            let _ = gain.gain().set_value_at_time(0.12, now);
+                            let _ = gain.gain().exponential_ramp_to_value_at_time(0.001, now + 1.2);
+                            let _ = osc.connect_with_audio_node(&gain);
+                            let _ = gain.connect_with_audio_node(&ctx.destination());
+                            let _ = osc.start();
+                            let _ = osc.stop_with_when(now + 1.25);
                         }
                     }
                 }

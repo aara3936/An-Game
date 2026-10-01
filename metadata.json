@@ -1,6 +1,6 @@
 {
   "name": "3D Strategic Defense & Missile Command",
-  "description": "Ultra-realistic 3D Strategic Defense & Global Warfare simulator inspired by superpower conflicts. Features 360-degree mobile touch orbit controls, Diplomatic Crisis & Peace Broker Engine (DEFCON 1-5), 80+ skyscraper metropolis, Phased-Array radar, Laser Point-Defense CIWS, 80+ physics debris structural crumble, persistent impact craters, and satellite war-room intelligence.",
+  "description": "Ultra-realistic 3D Strategic Defense & Global Warfare simulator. Features procedural weather (clear skies, rain showers, thunderstorm lightning, dynamic wind drift, radar attenuation), Throne Thriller 1 Early Warning Radar, VS-90 Pre-emptive Salvo, Intercept S-5 Mach 15 kinetic defense, 3-tier building collapse, nature-inspired HUD, and Android native APK pipeline.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

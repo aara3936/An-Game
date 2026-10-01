@@ -1,0 +1,135 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile for authenticated players",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID matching request.auth.uid"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of the commander",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 150
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar URL",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of profile creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last profile update"
+        }
+      },
+      "required": ["userId", "displayName", "createdAt"]
+    },
+    "SimulationRecord": {
+      "title": "SimulationRecord",
+      "description": "Battle telemetry and defense performance records",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique battle record ID",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the commander who fought the battle"
+        },
+        "userName": {
+          "type": "string",
+          "description": "Name of the commander",
+          "maxLength": 100
+        },
+        "score": {
+          "type": "number",
+          "description": "Combat score achieved"
+        },
+        "intercepts": {
+          "type": "number",
+          "description": "Number of hostile warheads neutralized"
+        },
+        "cityIntegrity": {
+          "type": "number",
+          "description": "Final integrity percentage of player metropolis"
+        },
+        "enemyIntegrity": {
+          "type": "number",
+          "description": "Final integrity percentage of enemy metropolis"
+        },
+        "weatherCondition": {
+          "type": "string",
+          "description": "Prevailing weather condition during combat",
+          "enum": ["ClearSkies", "RainShower", "HeavyThunderstorm"]
+        },
+        "victory": {
+          "type": "boolean",
+          "description": "Whether the defense was successful"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Server timestamp of record creation"
+        }
+      },
+      "required": ["id", "userId", "score", "intercepts", "cityIntegrity", "createdAt"]
+    },
+    "TacticalConfig": {
+      "title": "TacticalConfig",
+      "description": "Player defense grid configuration and tactical preferences",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the player"
+        },
+        "autoDefense": {
+          "type": "boolean",
+          "description": "Autonomous interceptor S-5 battery launch enabled"
+        },
+        "preferredWeather": {
+          "type": "string",
+          "description": "Initial weather simulation state",
+          "enum": ["ClearSkies", "RainShower", "HeavyThunderstorm"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of configuration update"
+        }
+      },
+      "required": ["userId", "autoDefense", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Private user profiles for authentication and identification"
+    },
+    "/simulation_records/{recordId}": {
+      "schema": {
+        "$ref": "#/entities/SimulationRecord"
+      },
+      "description": "Global battle records and high-score leaderboards"
+    },
+    "/tactical_configs/{userId}": {
+      "schema": {
+        "$ref": "#/entities/TacticalConfig"
+      },
+      "description": "Per-user persistent tactical defense grid preferences"
+    }
+  }
+}

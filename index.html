@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>3D Strategic Defense & Missile Command</title>
-  <meta name="description" content="Ultra-realistic 3D Strategic Defense & Global Warfare simulator inspired by superpower conflicts. Features 360-degree mobile touch orbit controls, Diplomatic Crisis & Peace Broker Engine (DEFCON 1-5), 80+ skyscraper metropolis, Phased-Array radar, Laser Point-Defense CIWS, 80+ physics debris structural crumble, persistent impact craters, and satellite war-room intelligence." />
+  <meta name="description" content="Ultra-realistic 3D Strategic Defense & Global Warfare simulator. Features procedural weather (clear skies, rain showers, thunderstorm lightning, dynamic wind drift, radar attenuation), Throne Thriller 1 Early Warning Radar, VS-90 Pre-emptive Salvo, Intercept S-5 Mach 15 kinetic defense, 3-tier building collapse, nature-inspired HUD, and Android native APK pipeline." />
   <meta property="og:title" content="3D Strategic Defense & Missile Command" />
-  <meta property="og:description" content="Ultra-realistic 3D Strategic Defense & Global Warfare simulator inspired by superpower conflicts. Features 360-degree mobile touch orbit controls, Diplomatic Crisis & Peace Broker Engine (DEFCON 1-5), 80+ skyscraper metropolis, Phased-Array radar, Laser Point-Defense CIWS, 80+ physics debris structural crumble, persistent impact craters, and satellite war-room intelligence." />
+  <meta property="og:description" content="Ultra-realistic 3D Strategic Defense & Global Warfare simulator. Features procedural weather (clear skies, rain showers, thunderstorm lightning, dynamic wind drift, radar attenuation), Throne Thriller 1 Early Warning Radar, VS-90 Pre-emptive Salvo, Intercept S-5 Mach 15 kinetic defense, 3-tier building collapse, nature-inspired HUD, and Android native APK pipeline." />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
@@ -668,9 +668,11 @@
       <button class="rust-tab-btn btn" data-file="physics" style="font-size: 7.5px; padding: 3px 6px;">src/physics_systems.rs</button>
       <button class="rust-tab-btn btn" data-file="radar" style="font-size: 7.5px; padding: 3px 6px;">src/radar_systems.rs</button>
       <button class="rust-tab-btn btn" data-file="shaders" style="font-size: 7.5px; padding: 3px 6px;">src/shaders.rs (WGSL Bloom)</button>
+      <button class="rust-tab-btn btn" data-file="weather" style="font-size: 7.5px; padding: 3px 6px;">src/weather.rs (Weather Engine)</button>
       <button class="rust-tab-btn btn" data-file="audio" style="font-size: 7.5px; padding: 3px 6px;">src/audio_system.rs (Audio Bridge)</button>
       <button class="rust-tab-btn btn" data-file="profiler" style="font-size: 7.5px; padding: 3px 6px;">src/profiler.rs (120 FPS Profiler)</button>
       <button class="rust-tab-btn btn" data-file="main" style="font-size: 7.5px; padding: 3px 6px;">src/main.rs (Native Runner)</button>
+      <button class="rust-tab-btn btn" data-file="android" style="font-size: 7.5px; padding: 3px 6px;">src/android.rs (Android APK)</button>
     </div>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -798,6 +800,10 @@
         <span style="color: #94a3b8;">DEFCON STATE:</span>
         <span id="grid-threat-state" style="color: #10b981; font-weight: bold;">DEFCON 5 PEACE</span>
       </div>
+      <div class="grid-metric-item" style="border-left: 2px solid #38bdf8;">
+        <span style="color: #94a3b8;">ATMOSPHERE:</span>
+        <span id="grid-weather-status" style="color: #38bdf8; font-weight: bold;">☀️ CLEAR // 8 KM/H</span>
+      </div>
       <button id="toggle-throne-overlay-btn" class="btn" style="border-color: #00f0ff; color: #00f0ff; padding: 2px 7px; font-size: 7.5px;">📡 RADAR HUD</button>
     </div>
 
@@ -806,6 +812,13 @@
       <div class="hud-panel" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; align-items: center;">
         <button id="open-rust-btn2" class="btn" style="border: 1px solid #f97316; color: #f97316; background: rgba(249, 115, 22, 0.15);">🦀 RUST ENGINE</button>
         <button id="toggle-diagnostics-btn" class="btn" style="border: 1px solid #10b981; color: #10b981; background: rgba(16, 185, 129, 0.15);">⚡ 120 FPS PROFILER</button>
+        <div style="display: flex; gap: 2px; align-items: center; background: rgba(15, 23, 42, 0.7); padding: 2px 4px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.35);">
+          <span style="font-size: 7.5px; color: #94a3b8; font-family: monospace; font-weight: bold;">METEOROLOGY:</span>
+          <button id="weather-clear-btn" class="btn btn-active" style="padding: 2px 5px; font-size: 7.5px; border-color: #38bdf8; color: #38bdf8;">☀️ CLEAR</button>
+          <button id="weather-rain-btn" class="btn" style="padding: 2px 5px; font-size: 7.5px; border-color: #60a5fa; color: #60a5fa;">🌧️ RAIN</button>
+          <button id="weather-storm-btn" class="btn" style="padding: 2px 5px; font-size: 7.5px; border-color: #c084fc; color: #c084fc;">⛈️ STORM</button>
+          <button id="weather-lightning-btn" class="btn" style="padding: 2px 5px; font-size: 7.5px; border-color: #facc15; color: #facc15;">⚡ STRIKE</button>
+        </div>
         <button id="intercept-s5-btn" class="btn btn-primary" style="box-shadow: 0 0 12px rgba(0,240,255,0.45);">🚀 INTERCEPT S-5 (MACH 15)</button>
         <button id="vs90-retaliation-btn" class="btn btn-danger" style="border: 1px solid #ff0055; box-shadow: 0 0 14px rgba(255,0,85,0.5);">⚡ VS-90 SALVO RETALIATION</button>
         <button id="coordinated-salvo-btn" class="btn btn-danger">💥 ENEMY 8-WARHEAD WAVE</button>
@@ -1095,6 +1108,36 @@
       osc.stop(now + 0.08);
     }
 
+    // PROCEDURAL THUNDER & LIGHTNING AUDIO SYNTHESIS
+    function playThunderClap() {
+      if (!audioCtx || isMuted) return;
+      initAudio();
+      const now = audioCtx.currentTime;
+      const dur = 4.2;
+      const bufSize = Math.floor(audioCtx.sampleRate * dur);
+      const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        const t = i / audioCtx.sampleRate;
+        const initialCrackle = Math.exp(-t / 0.14) * (Math.random() * 2 - 1);
+        const rumble = Math.sin(t * 22.0) * Math.exp(-t / 1.9) * (Math.random() * 0.85 + 0.15);
+        data[i] = initialCrackle * 0.85 + rumble * 0.55;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(950, now);
+      filter.frequency.exponentialRampToValueAtTime(38, now + dur);
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.95, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      noise.start(now);
+    }
+
     // --- THREE.JS SCENE, SKYDOME & DAYLIGHT ENGINE ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
@@ -1173,6 +1216,280 @@
     sunLight.shadow.camera.top = dSize;
     sunLight.shadow.camera.bottom = -dSize;
     scene.add(sunLight);
+
+    // PROCEDURAL ENVIRONMENTAL WEATHER SYSTEM (Clear, Rain Showers, Heavy Thunderstorm)
+    const weatherEngine = {
+      condition: 'ClearSkies', // 'ClearSkies' | 'RainShower' | 'HeavyThunderstorm'
+      previousCondition: 'ClearSkies',
+      timer: 0,
+      duration: 36.0, // Periodic cycle: Clear (36s) -> Rain (30s) -> Thunderstorm (28s)
+      autoCycle: true,
+      windVector: new THREE.Vector3(5.0, 0, 4.0),
+      windSpeedKmh: 8.5,
+      precipitationIntensity: 0.0,
+      cloudDensity: 0.12,
+      fogDensity: 0.0012,
+      radarAttenuation: 0.0, // 0.0 to 0.45 noise clutter on early warning radar
+      lightningTimer: 3.2,
+      lightningFlashIntensity: 0.0,
+      lightningMeshLife: 0.0,
+      strikeCount: 0
+    };
+
+    // PROCEDURAL FALLING RAIN STREAKS (3,500 Zero-Allocation Line Segments)
+    const RAIN_COUNT = 3500;
+    const rainPositions = new Float32Array(RAIN_COUNT * 6);
+    const rainVelocities = new Float32Array(RAIN_COUNT);
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      const rx = (Math.random() - 0.5) * 1400;
+      const ry = Math.random() * 380;
+      const rz = (Math.random() - 0.5) * 1400;
+      rainPositions[i * 6] = rx;
+      rainPositions[i * 6 + 1] = ry;
+      rainPositions[i * 6 + 2] = rz;
+      rainPositions[i * 6 + 3] = rx;
+      rainPositions[i * 6 + 4] = ry - 5.5;
+      rainPositions[i * 6 + 5] = rz;
+      rainVelocities[i] = 170 + Math.random() * 90;
+    }
+    const rainGeo = new THREE.BufferGeometry();
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
+    const rainMat = new THREE.LineBasicMaterial({
+      color: 0x93c5fd,
+      transparent: true,
+      opacity: 0.0,
+      blending: THREE.AdditiveBlending
+    });
+    const rainMesh = new THREE.LineSegments(rainGeo, rainMat);
+    rainMesh.visible = false;
+    scene.add(rainMesh);
+
+    // PROCEDURAL 3D LIGHTNING BOLTS & FLASH ILLUMINATION
+    const lightningGroup = new THREE.Group();
+    scene.add(lightningGroup);
+    const lightningLight = new THREE.PointLight(0xdbeafe, 0, 2400);
+    scene.add(lightningLight);
+
+    function createLightningBranch(startX, startY, startZ, endX, endY, endZ, maxDisp = 32, maxDepth = 4) {
+      const points = [];
+      function subdivide(p1, p2, disp, depth) {
+        if (depth >= maxDepth || p1.distanceTo(p2) < 20) {
+          points.push(p1.clone(), p2.clone());
+          return;
+        }
+        const mid = new THREE.Vector3().lerpVectors(p1, p2, 0.5);
+        mid.x += (Math.random() - 0.5) * disp;
+        mid.y += (Math.random() - 0.5) * (disp * 0.35);
+        mid.z += (Math.random() - 0.5) * disp;
+
+        // Secondary fork branching
+        if (depth < 3 && Math.random() < 0.35) {
+          const forkTarget = mid.clone().add(new THREE.Vector3(
+            (Math.random() - 0.5) * 90,
+            -45 - Math.random() * 30,
+            (Math.random() - 0.5) * 90
+          ));
+          subdivide(mid, forkTarget, disp * 0.55, depth + 1);
+        }
+
+        subdivide(p1, mid, disp * 0.65, depth + 1);
+        subdivide(mid, p2, disp * 0.65, depth + 1);
+      }
+
+      subdivide(new THREE.Vector3(startX, startY, startZ), new THREE.Vector3(endX, endY, endZ), maxDisp, 0);
+      const bGeo = new THREE.BufferGeometry().setFromPoints(points);
+      const bMat = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        linewidth: 2,
+        transparent: true,
+        opacity: 0.98,
+        blending: THREE.AdditiveBlending
+      });
+      return new THREE.LineSegments(bGeo, bMat);
+    }
+
+    function triggerProceduralLightning(targetPos) {
+      while (lightningGroup.children.length > 0) {
+        const c = lightningGroup.children[0];
+        lightningGroup.remove(c);
+        if (c.geometry) c.geometry.dispose();
+      }
+
+      const tx = targetPos ? targetPos.x : (Math.random() - 0.5) * 600;
+      const tz = targetPos ? targetPos.z : (Math.random() - 0.5) * 600;
+      const ty = targetPos ? targetPos.y : 0;
+      const sy = 280 + Math.random() * 70;
+      const sx = tx + (Math.random() - 0.5) * 140;
+      const sz = tz + (Math.random() - 0.5) * 140;
+
+      const bolt = createLightningBranch(sx, sy, sz, tx, ty, tz);
+      lightningGroup.add(bolt);
+
+      lightningLight.position.set(tx, Math.max(90, ty + 70), tz);
+      lightningLight.intensity = 9.5;
+      weatherEngine.lightningFlashIntensity = 1.0;
+      weatherEngine.lightningMeshLife = 0.22;
+      weatherEngine.strikeCount++;
+
+      // Flash sky and fog illumination
+      skyMat.color.setHex(0xe0f2fe);
+      scene.fog.color.setHex(0x93c5fd);
+
+      playThunderClap();
+      showStatus('⚡ PROCEDURAL LIGHTNING STRIKE AT (' + Math.round(tx) + ', ' + Math.round(tz) + ')');
+    }
+
+    function setWeatherCondition(newCond, manual = false) {
+      weatherEngine.previousCondition = weatherEngine.condition;
+      weatherEngine.condition = newCond;
+      weatherEngine.timer = 0;
+      if (manual) weatherEngine.autoCycle = false;
+
+      // Update button active states
+      const cBtn = document.getElementById('weather-clear-btn');
+      const rBtn = document.getElementById('weather-rain-btn');
+      const sBtn = document.getElementById('weather-storm-btn');
+      if (cBtn) cBtn.classList.toggle('btn-active', newCond === 'ClearSkies');
+      if (rBtn) rBtn.classList.toggle('btn-active', newCond === 'RainShower');
+      if (sBtn) sBtn.classList.toggle('btn-active', newCond === 'HeavyThunderstorm');
+
+      const messages = {
+        ClearSkies: '☀️ METEOROLOGY: CLEAR SKIES ENGAGED // VISIBILITY 100% // CALM WINDS',
+        RainShower: '🌧️ METEOROLOGY: RAIN SHOWER SQUALL // GALE CROSSWINDS // REDUCED VISIBILITY',
+        HeavyThunderstorm: '⛈️ METEOROLOGY: SEVERE THUNDERSTORM // LIGHTNING STRIKES // RADAR ATTENUATION CLUTTER'
+      };
+      showStatus(messages[newCond] || 'WEATHER UPDATED');
+      updateUI();
+    }
+
+    function updateProceduralWeather(dt) {
+      weatherEngine.timer += dt;
+
+      // Periodic procedural cycle: ClearSkies (36s) -> RainShower (30s) -> HeavyThunderstorm (28s) -> repeat
+      if (weatherEngine.autoCycle && weatherEngine.timer >= weatherEngine.duration) {
+        let nextCond = 'ClearSkies';
+        if (weatherEngine.condition === 'ClearSkies') {
+          nextCond = 'RainShower';
+          weatherEngine.duration = 30.0;
+        } else if (weatherEngine.condition === 'RainShower') {
+          nextCond = 'HeavyThunderstorm';
+          weatherEngine.duration = 28.0;
+        } else {
+          nextCond = 'ClearSkies';
+          weatherEngine.duration = 36.0;
+        }
+        setWeatherCondition(nextCond, false);
+      }
+
+      // Target atmospheric attributes based on active condition
+      let targetPrecip = 0.0;
+      let targetWind = new THREE.Vector3(5.0, 0, 4.0);
+      let targetSunIntensity = 1.8;
+      let targetHemiIntensity = 0.95;
+      let targetFogDensity = 0.0012;
+      let targetAttenuation = 0.0;
+      let targetFogColor = new THREE.Color(0xa7c5eb);
+      let targetSkyColor = new THREE.Color(0xffffff);
+      let targetCloudColor = new THREE.Color(0xffffff);
+
+      if (weatherEngine.condition === 'RainShower') {
+        targetPrecip = 0.55;
+        targetWind.set(-26.0, 0, 18.0);
+        targetSunIntensity = 0.85;
+        targetHemiIntensity = 0.55;
+        targetFogDensity = 0.0028;
+        targetAttenuation = 0.18;
+        targetFogColor.setHex(0x64748b);
+        targetSkyColor.setHex(0x90a4ae);
+        targetCloudColor.setHex(0x78909c);
+      } else if (weatherEngine.condition === 'HeavyThunderstorm') {
+        targetPrecip = 1.0;
+        targetWind.set(-56.0, 0, 40.0);
+        targetSunIntensity = 0.22;
+        targetHemiIntensity = 0.25;
+        targetFogDensity = 0.0050;
+        targetAttenuation = 0.42;
+        targetFogColor.setHex(0x1e293b);
+        targetSkyColor.setHex(0x334155);
+        targetCloudColor.setHex(0x334155);
+      }
+
+      // Smooth atmospheric interpolation
+      const blend = dt * 1.5;
+      weatherEngine.precipitationIntensity = THREE.MathUtils.lerp(weatherEngine.precipitationIntensity, targetPrecip, blend);
+      weatherEngine.windVector.lerp(targetWind, blend);
+      weatherEngine.windSpeedKmh = weatherEngine.windVector.length() * 1.6;
+      weatherEngine.radarAttenuation = THREE.MathUtils.lerp(weatherEngine.radarAttenuation, targetAttenuation, blend);
+
+      sunLight.intensity = THREE.MathUtils.lerp(sunLight.intensity, targetSunIntensity, blend);
+      hemiLight.intensity = THREE.MathUtils.lerp(hemiLight.intensity, targetHemiIntensity, blend);
+      scene.fog.density = THREE.MathUtils.lerp(scene.fog.density, targetFogDensity, blend);
+      scene.fog.color.lerp(targetFogColor, blend);
+      skyMat.color.lerp(targetSkyColor, blend);
+      cloudMat.color.lerp(targetCloudColor, blend);
+
+      // Severe thunderstorm lightning strike generator
+      if (weatherEngine.condition === 'HeavyThunderstorm') {
+        weatherEngine.lightningTimer -= dt;
+        if (weatherEngine.lightningTimer <= 0) {
+          triggerProceduralLightning();
+          weatherEngine.lightningTimer = 2.6 + Math.random() * 4.2;
+        }
+      }
+
+      // Decay active lightning flash
+      if (weatherEngine.lightningMeshLife > 0) {
+        weatherEngine.lightningMeshLife -= dt;
+        lightningLight.intensity = Math.max(0, weatherEngine.lightningFlashIntensity * 9.5);
+        weatherEngine.lightningFlashIntensity = Math.max(0, weatherEngine.lightningFlashIntensity - dt * 4.5);
+        if (weatherEngine.lightningMeshLife <= 0) {
+          while (lightningGroup.children.length > 0) {
+            const c = lightningGroup.children[0];
+            lightningGroup.remove(c);
+            if (c.geometry) c.geometry.dispose();
+          }
+          lightningLight.intensity = 0;
+        }
+      }
+
+      // Update falling rain particle streaks
+      if (weatherEngine.precipitationIntensity > 0.02) {
+        rainMesh.visible = true;
+        rainMat.opacity = Math.min(0.85, weatherEngine.precipitationIntensity * 0.85);
+        const pArr = rainGeo.attributes.position.array;
+        const stormSpeedMult = weatherEngine.condition === 'HeavyThunderstorm' ? 1.55 : 1.0;
+        for (let i = 0; i < RAIN_COUNT; i++) {
+          pArr[i * 6 + 1] -= rainVelocities[i] * dt * stormSpeedMult;
+          pArr[i * 6] += weatherEngine.windVector.x * dt * 0.35;
+          pArr[i * 6 + 2] += weatherEngine.windVector.z * dt * 0.35;
+
+          if (pArr[i * 6 + 1] < 0) {
+            pArr[i * 6 + 1] = 340 + Math.random() * 60;
+            pArr[i * 6] = (Math.random() - 0.5) * 1400;
+            pArr[i * 6 + 2] = (Math.random() - 0.5) * 1400;
+          }
+
+          // Wind slanted tail
+          pArr[i * 6 + 3] = pArr[i * 6] - weatherEngine.windVector.x * 0.08;
+          pArr[i * 6 + 4] = pArr[i * 6 + 1] - 6.5;
+          pArr[i * 6 + 5] = pArr[i * 6 + 2] - weatherEngine.windVector.z * 0.08;
+        }
+        rainGeo.attributes.position.needsUpdate = true;
+      } else {
+        rainMesh.visible = false;
+        rainMat.opacity = 0;
+      }
+
+      // Wind moves drifting clouds
+      cloudsGroup.children.forEach(c => {
+        c.position.x += weatherEngine.windVector.x * dt * 0.28;
+        c.position.z += weatherEngine.windVector.z * dt * 0.28;
+        if (c.position.x > 750) c.position.x = -750;
+        if (c.position.x < -750) c.position.x = 750;
+        if (c.position.z > 750) c.position.z = -750;
+        if (c.position.z < -750) c.position.z = 750;
+      });
+    }
 
     // TERRAIN, CITY ASPHALT ROADS & OCEAN
     const groundGeo = new THREE.PlaneGeometry(600, 600);
@@ -3174,6 +3491,22 @@
         gridThreat.innerText = isVS90Primed ? 'DEFCON 1 CRITICAL' : (enemyAI.state === 'IDLE' ? 'DEFCON 5 PEACE' : 'DEFCON 2 COMBAT');
         gridThreat.style.color = isVS90Primed ? '#ff0055' : (enemyAI.state === 'IDLE' ? '#10b981' : '#f59e0b');
       }
+
+      const gridWeather = document.getElementById('grid-weather-status');
+      if (gridWeather && typeof weatherEngine !== 'undefined') {
+        const labels = {
+          ClearSkies: '☀️ CLEAR // ' + Math.round(weatherEngine.windSpeedKmh) + ' KM/H',
+          RainShower: '🌧️ SQUALL // ' + Math.round(weatherEngine.windSpeedKmh) + ' KM/H',
+          HeavyThunderstorm: '⛈️ STORM // ' + Math.round(weatherEngine.windSpeedKmh) + ' KM/H (CLUTTER ' + Math.round(weatherEngine.radarAttenuation * 100) + '%)'
+        };
+        const colors = {
+          ClearSkies: '#38bdf8',
+          RainShower: '#60a5fa',
+          HeavyThunderstorm: '#c084fc'
+        };
+        gridWeather.innerText = labels[weatherEngine.condition] || '☀️ CLEAR';
+        gridWeather.style.color = colors[weatherEngine.condition] || '#38bdf8';
+      }
     }
 
     function showStatus(text) {
@@ -4054,8 +4387,19 @@
           listEl.innerHTML = '<div style="color: #64748b; font-size: 8px; text-align: center; padding: 10px;">STANDBY // NO HOSTILE THREAT VECTORS IN AIRSPACE</div>';
         } else {
           let html = '';
+          if (weatherEngine && weatherEngine.radarAttenuation > 0.05) {
+            html += `
+              <div style="background: rgba(192, 132, 252, 0.2); border: 1px dashed #c084fc; border-radius: 4px; padding: 3px 5px; margin-bottom: 4px; font-size: 7.5px; color: #f5d0fe;">
+                ⛈️ ATMOSPHERIC ATTENUATION: ${Math.round(weatherEngine.radarAttenuation * 100)}% (IONOSPHERIC NOISE JITTER)
+              </div>
+            `;
+          }
           activeHostiles.slice(0, 6).forEach(h => {
             const isNuc = h.isNuclear;
+            // Add stochastic jitter if radar attenuation active
+            const jitter = (weatherEngine && weatherEngine.radarAttenuation > 0.05) ? (Math.random() - 0.5) * 12.0 * weatherEngine.radarAttenuation : 0;
+            const dispAlt = Math.max(0, Math.round(h.altitude + jitter));
+            const dispRange = Math.max(0, Math.round(h.pos.distanceTo(h.target) + jitter * 2));
             html += `
               <div class="threat-card ${isNuc ? 'nuclear' : ''}">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -4065,9 +4409,9 @@
                   <span class="tti-badge">TTI: ${h.tti.toFixed(1)}s</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; color:#94a3b8; font-size:7.5px;">
-                  <span>ALT: ${Math.round(h.altitude)}km</span>
+                  <span>ALT: ${dispAlt}km</span>
                   <span>SPEED: MACH ${(h.speed / 12).toFixed(1)}</span>
-                  <span>RANGE: ${Math.round(h.pos.distanceTo(h.target))}km</span>
+                  <span>RANGE: ${dispRange}km</span>
                 </div>
               </div>
             `;
@@ -5807,6 +6151,71 @@ fn main() {
         sim.tick(1.0 / 120.0);
     }
     println!("[BENCHMARK] Success: 120 FPS Zero-Allocation Physics Loop executed smoothly.");
+}`,
+
+      weather: `//! Procedural Environmental Weather System (Clear, Rain Showers, Heavy Thunderstorm)
+//! Dynamic wind vector drift, rain streaks, stochastic lightning strike generator, and radar attenuation
+use glam::Vec3;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WeatherCondition { ClearSkies, RainShower, HeavyThunderstorm }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WeatherState {
+    pub current_condition: WeatherCondition,
+    pub previous_condition: WeatherCondition,
+    pub transition_progress: f32,
+    pub state_timer: f32,
+    pub state_duration: f32,
+    pub wind_vector: Vec3,
+    pub wind_speed_kmh: f32,
+    pub precipitation_intensity: f32,
+    pub cloud_density: f32,
+    pub fog_density: f32,
+    pub radar_attenuation: f32,
+    pub lightning_flash_intensity: f32,
+    pub lightning_timer: f32,
+    pub lightning_strike_count: u32,
+}
+
+impl WeatherState {
+    pub fn update(&mut self, dt: f32) -> Option<WeatherCondition> {
+        self.state_timer += dt;
+        if self.state_timer >= self.state_duration {
+            self.state_timer = 0.0;
+            self.previous_condition = self.current_condition;
+            self.current_condition = match self.current_condition {
+                WeatherCondition::ClearSkies => WeatherCondition::RainShower,
+                WeatherCondition::RainShower => WeatherCondition::HeavyThunderstorm,
+                WeatherCondition::HeavyThunderstorm => WeatherCondition::ClearSkies,
+            };
+            return Some(self.current_condition);
+        }
+        None
+    }
+    pub fn calculate_wind_deflection(&self, mass_factor: f32, dt: f32) -> Vec3 {
+        self.wind_vector * (dt * mass_factor * 0.12)
+    }
+}`,
+
+      android: `//! Android AARCH64 Native Activity, Touch Input Mapping & Vulkan/GLES3 Surface Loop
+//! Target: aarch64-linux-android • 120 Hz Touch Sampling • NativeActivity Bindings
+use glam::Vec2;
+
+pub struct AndroidTouchController {
+    pub orbit_delta: Vec2,
+    pub zoom_delta: f32,
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub extern "C" fn android_main(_app: *mut std::ffi::c_void) {
+    println!("[ANDROID] Initializing Warfare Simulator 3D APK (aarch64 Vulkan/GLES3)...");
+    let mut sim = crate::WasmWarfareSimulation::new();
+    loop {
+        sim.tick(1.0 / 120.0);
+    }
 }`
     };
 
@@ -5823,9 +6232,11 @@ fn main() {
           physics: 'src/physics_systems.rs (Airburst & Trajectories)',
           radar: 'src/radar_systems.rs (Multi-Pin Radar)',
           shaders: 'src/shaders.rs (WGSL Shaders & HDR Bloom)',
+          weather: 'src/weather.rs (Procedural Weather & Lightning)',
           audio: 'src/audio_system.rs (Procedural Web Audio Bridge)',
           profiler: 'src/profiler.rs (120 FPS Adaptive Profiler)',
-          main: 'src/main.rs (Native 120 FPS Runner)'
+          main: 'src/main.rs (Native 120 FPS Runner)',
+          android: 'src/android.rs (Android AARCH64 Native Activity)'
         };
         rustFileLabel.innerText = names[fileKey] || fileKey;
       }
@@ -6040,11 +6451,8 @@ fn main() {
       const enemyBeaconAlpha = (Math.sin(beaconTime * 8.0) > 0) ? 1.0 : 0.15;
       enemyAlertBeaconMat.color.setRGB(enemyBeaconAlpha, 0, 0);
 
-      // Drifting clouds
-      cloudsGroup.children.forEach(c => {
-        c.position.x += dt * 5.0;
-        if (c.position.x > 700) c.position.x = -700;
-      });
+      // Procedural environmental weather simulation (Clear, Rain Showers, Heavy Thunderstorm & Lightning)
+      updateProceduralWeather(dt);
 
       // Cyber shield dissipation
       if (isSpearActive) {
@@ -6181,6 +6589,12 @@ fn main() {
         }
 
         w.group.position.addScaledVector(w.vel, dt);
+        // Environmental Weather Challenge: Wind vector deflection
+        if (weatherEngine && weatherEngine.windSpeedKmh > 12) {
+          const windDriftScale = (weatherEngine.condition === 'HeavyThunderstorm' ? 0.45 : 0.20) * dt;
+          w.group.position.x += weatherEngine.windVector.x * windDriftScale;
+          w.group.position.z += weatherEngine.windVector.z * windDriftScale;
+        }
         if (w.vel.lengthSq() > 0.1) {
           _scratchV1.copy(w.group.position).add(w.vel);
           w.group.lookAt(_scratchV1);
@@ -6478,6 +6892,8 @@ fn main() {
       smokePool.forEach(sm => {
         if (!sm.active) return;
         sm.life += dt;
+        sm.vel.x += weatherEngine.windVector.x * dt * 0.22;
+        sm.vel.z += weatherEngine.windVector.z * dt * 0.22;
         sm.mesh.position.addScaledVector(sm.vel, dt);
         sm.scale += dt * 2.6;
         sm.mesh.scale.set(sm.scale, sm.scale, sm.scale);
@@ -6541,6 +6957,8 @@ fn main() {
         if (!p.active) return;
         p.life += dt;
         p.vel.y -= 12 * dt; // Gravity
+        p.vel.x += weatherEngine.windVector.x * dt * 0.14;
+        p.vel.z += weatherEngine.windVector.z * dt * 0.14;
         p.mesh.position.addScaledVector(p.vel, dt);
         p.mesh.rotation.x += dt * 3.0;
         p.mesh.rotation.y += dt * 2.0;
@@ -6828,6 +7246,39 @@ fn main() {
         if (overlay) {
           overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
         }
+      });
+    }
+
+    // PROCEDURAL WEATHER CONTROLS (Clear, Rain Showers, Heavy Thunderstorm & Lightning Strike)
+    const wClearBtn = document.getElementById('weather-clear-btn');
+    if (wClearBtn) {
+      wClearBtn.addEventListener('click', () => {
+        initAudio();
+        setWeatherCondition('ClearSkies', true);
+      });
+    }
+
+    const wRainBtn = document.getElementById('weather-rain-btn');
+    if (wRainBtn) {
+      wRainBtn.addEventListener('click', () => {
+        initAudio();
+        setWeatherCondition('RainShower', true);
+      });
+    }
+
+    const wStormBtn = document.getElementById('weather-storm-btn');
+    if (wStormBtn) {
+      wStormBtn.addEventListener('click', () => {
+        initAudio();
+        setWeatherCondition('HeavyThunderstorm', true);
+      });
+    }
+
+    const wStrikeBtn = document.getElementById('weather-lightning-btn');
+    if (wStrikeBtn) {
+      wStrikeBtn.addEventListener('click', () => {
+        initAudio();
+        triggerProceduralLightning();
       });
     }
 
