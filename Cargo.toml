@@ -62,3 +62,4 @@ lto = true            # Link-Time Optimization across all crates
 codegen-units = 1     # Maximize compiler optimization passes
 panic = "abort"       # Strip stack unwinding overhead for WebAssembly
 strip = "symbols"     # Strip debug symbols for production Wasm artifact
+
