@@ -1,0 +1,40 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main  # یا اگر آپ کی بنیادی برانچ master ہے تو یہاں master لکھیں
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Java JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Bubblewrap / Cordova CLI
+      run: |
+        npm install -g @bubblewrap/cli
+
+    - name: Build Web App & Package APK
+      run: |
+        # اگر آپ کلاسک HTML/JS استعمال کر رہے ہیں یا Capacitor/Cordova:
+        echo "Building App Package..."
+        
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: game-apk
+        path: '**/*.apk'
